@@ -5,10 +5,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { useAppStore } from "@/store/use-app-store";
 import { CustomPrompt } from "@/types";
 import { Button } from "./ui/button";
-import { useAppStore } from "@/store/use-app-store";
-import { generateId, cn } from "@/lib/utils";
-import { X, Plus, Trash2, Sparkles, FileText } from "lucide-react";
 import { generateId, truncateText, cn } from "@/lib/utils";
+import { X, Plus, Trash2, Sparkles, FileText } from "lucide-react";
 
 interface PromptLibraryProps {
   open: boolean;
