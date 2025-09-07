@@ -1,0 +1,177 @@
+
+> multi-chat@1.0.0 dev
+> next dev -p 3010
+
+   ▲ Next.js 15.5.2
+   - Local:        http://localhost:3010
+   - Network:      http://192.168.11.9:3010
+
+ ✓ Starting...
+ ✓ Ready in 2.9s
+ ○ Compiling / ...
+ ✓ Compiled / in 2.2s (796 modules)
+ GET / 200 in 2655ms
+ HEAD / 200 in 213ms
+ ✓ Compiled in 664ms (796 modules)
+ GET / 200 in 141ms
+ ✓ Compiled in 529ms (362 modules)
+ GET / 200 in 232ms
+ ✓ Compiled in 379ms (362 modules)
+ GET / 200 in 66ms
+ ✓ Compiled in 456ms (800 modules)
+ GET / 200 in 152ms
+ ✓ Compiled in 583ms (792 modules)
+ GET / 200 in 125ms
+ ✓ Compiled in 971ms (792 modules)
+ GET / 200 in 124ms
+ ✓ Compiled in 439ms (792 modules)
+ GET / 200 in 149ms
+ ✓ Compiled in 329ms (792 modules)
+ GET / 200 in 115ms
+ ✓ Compiled in 292ms (792 modules)
+ GET / 200 in 68ms
+ ✓ Compiled in 306ms (792 modules)
+ GET / 200 in 110ms
+ ✓ Compiled in 1009ms (792 modules)
+ GET / 200 in 75ms
+ GET / 200 in 275ms
+ ✓ Compiled in 1195ms (792 modules)
+ GET / 200 in 182ms
+ ✓ Compiled in 515ms (792 modules)
+ GET / 200 in 160ms
+ ✓ Compiled in 337ms (792 modules)
+ GET / 200 in 160ms
+ ✓ Compiled in 453ms (794 modules)
+ GET / 200 in 106ms
+ ✓ Compiled in 704ms (794 modules)
+ GET / 200 in 80ms
+ ✓ Compiled in 290ms (794 modules)
+ GET / 200 in 48ms
+ GET / 200 in 276ms
+ ✓ Compiled in 662ms (361 modules)
+ GET / 200 in 305ms
+ ✓ Compiled in 454ms (361 modules)
+ GET / 200 in 203ms
+ ✓ Compiled in 250ms (361 modules)
+ GET / 200 in 33ms
+ ✓ Compiled in 864ms (802 modules)
+ GET / 200 in 122ms
+ ✓ Compiled in 444ms (804 modules)
+ GET / 200 in 125ms
+ ✓ Compiled in 1093ms (804 modules)
+ GET / 200 in 176ms
+ GET / 200 in 287ms
+ ✓ Compiled in 727ms (804 modules)
+ GET / 200 in 149ms
+ ✓ Compiled in 815ms (804 modules)
+ GET / 200 in 97ms
+ ✓ Compiled in 439ms (804 modules)
+ GET / 200 in 125ms
+ ✓ Compiled in 376ms (804 modules)
+ GET / 200 in 78ms
+ ✓ Compiled in 1630ms (804 modules)
+ GET / 200 in 141ms
+ ✓ Compiled in 599ms (804 modules)
+ GET / 200 in 233ms
+ ✓ Compiled in 737ms (804 modules)
+ GET / 200 in 151ms
+ ✓ Compiled in 619ms (804 modules)
+ GET / 200 in 124ms
+ GET / 200 in 266ms
+ ✓ Compiled in 750ms (804 modules)
+ GET / 200 in 241ms
+ ✓ Compiled in 936ms (804 modules)
+ GET / 200 in 142ms
+ ✓ Compiled in 573ms (804 modules)
+ GET / 200 in 125ms
+ ✓ Compiled in 585ms (804 modules)
+ GET / 200 in 250ms
+ ✓ Compiled in 1438ms (804 modules)
+ GET / 200 in 154ms
+ ✓ Compiled in 1481ms (804 modules)
+ GET / 200 in 149ms
+ ✓ Compiled in 328ms (804 modules)
+ GET / 200 in 95ms
+ ✓ Compiled in 895ms (804 modules)
+ GET / 200 in 179ms
+ ✓ Compiled in 848ms (804 modules)
+ GET / 200 in 121ms
+ ✓ Compiled in 1353ms (804 modules)
+ GET / 200 in 201ms
+ ✓ Compiled in 475ms (804 modules)
+ GET / 200 in 126ms
+ ✓ Compiled in 373ms (804 modules)
+ GET / 200 in 208ms
+ ✓ Compiled in 1868ms (804 modules)
+ GET / 200 in 132ms
+ ✓ Compiled in 648ms (804 modules)
+ GET / 200 in 97ms
+ ✓ Compiled in 614ms (804 modules)
+ GET / 200 in 241ms
+ GET / 200 in 1780ms
+ ✓ Compiled in 1067ms (804 modules)
+ GET / 200 in 108ms
+ ✓ Compiled in 296ms (804 modules)
+ GET / 200 in 70ms
+ ✓ Compiled in 397ms (804 modules)
+ GET / 200 in 94ms
+ ✓ Compiled in 500ms (804 modules)
+ GET / 200 in 128ms
+ GET / 200 in 527ms
+ ✓ Compiled in 1288ms (804 modules)
+ GET / 200 in 234ms
+ ✓ Compiled in 683ms (804 modules)
+ GET / 200 in 134ms
+ ✓ Compiled in 1587ms (366 modules)
+ GET / 200 in 159ms
+ ✓ Compiled in 1170ms (804 modules)
+ GET / 200 in 221ms
+ ⨯ ./components/prompt-library.tsx
+Module parse failed: Identifier 'useAppStore' has already been declared (7:9)
+| import { useAppStore } from '@/store/use-app-store';
+| import { Button } from './ui/button';
+> import { useAppStore } from '@/store/use-app-store';
+| import { generateId, cn } from '@/lib/utils';
+| import { X, Plus, Trash2, Sparkles, FileText } from "__barrel_optimize__?names=FileText,Plus,Sparkles,Trash2,X!=!lucide-react";
+
+Import trace for requested module:
+./components/prompt-library.tsx
+./components/main-layout.tsx
+./app/page.tsx
+ ⨯ ./components/prompt-library.tsx
+Module parse failed: Identifier 'useAppStore' has already been declared (7:9)
+| import { useAppStore } from '@/store/use-app-store';
+| import { Button } from './ui/button';
+> import { useAppStore } from '@/store/use-app-store';
+| import { generateId, cn } from '@/lib/utils';
+| import { X, Plus, Trash2, Sparkles, FileText } from "__barrel_optimize__?names=FileText,Plus,Sparkles,Trash2,X!=!lucide-react";
+
+Import trace for requested module:
+./components/prompt-library.tsx
+./components/main-layout.tsx
+./app/page.tsx
+ ⨯ ./components/prompt-library.tsx
+Module parse failed: Identifier 'useAppStore' has already been declared (7:9)
+| import { useAppStore } from '@/store/use-app-store';
+| import { Button } from './ui/button';
+> import { useAppStore } from '@/store/use-app-store';
+| import { generateId, cn } from '@/lib/utils';
+| import { X, Plus, Trash2, Sparkles, FileText } from "__barrel_optimize__?names=FileText,Plus,Sparkles,Trash2,X!=!lucide-react";
+
+Import trace for requested module:
+./components/prompt-library.tsx
+./components/main-layout.tsx
+./app/page.tsx
+ ⨯ ./components/prompt-library.tsx
+Module parse failed: Identifier 'useAppStore' has already been declared (7:9)
+| import { useAppStore } from "@/store/use-app-store";
+| import { Button } from "./ui/button";
+> import { useAppStore } from "@/store/use-app-store";
+| import { generateId, cn } from "@/lib/utils";
+| import { X, Plus, Trash2, Sparkles, FileText } from "__barrel_optimize__?names=FileText,Plus,Sparkles,Trash2,X!=!lucide-react";
+
+Import trace for requested module:
+./components/prompt-library.tsx
+./components/main-layout.tsx
+./app/page.tsx
+^C^C
