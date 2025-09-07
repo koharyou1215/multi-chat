@@ -54,7 +54,7 @@ export function MainLayout() {
                 アクティブプロンプト
               </h3>
               <div className="space-y-2">
-                {panels.slice(0, activePanels).map((panel) => (
+                {panels.slice(0, activePanels).map((panel: any) => (
                   <div
                     key={panel.id}
                     className="p-2 rounded-md bg-muted/50 text-xs">
@@ -88,7 +88,7 @@ export function MainLayout() {
             "grid gap-2 p-2 flex-1 overflow-auto",
             getGridClasses()
           )}>
-          {panels.slice(0, activePanels).map((panel) => (
+          {panels.slice(0, activePanels).map((panel: any) => (
             <ChatPanel key={panel.id} panel={panel} />
           ))}
         </div>

@@ -67,7 +67,7 @@ export function PromptLibrary({ open, onClose }: PromptLibraryProps) {
               </div>
 
               <div className="space-y-2">
-                {customPrompts.map((prompt) => (
+                {customPrompts.map((prompt: any) => (
                   <div
                     key={prompt.id}
                     className={cn(
@@ -89,7 +89,7 @@ export function PromptLibrary({ open, onClose }: PromptLibraryProps) {
                       {truncateText(prompt.content, 60)}
                     </p>
                     <div className="flex items-center gap-2 mt-2">
-                      {prompt.tags.slice(0, 2).map((tag) => (
+                      {prompt.tags.slice(0, 2).map((tag: any) => (
                         <span
                           key={tag}
                           className="px-1.5 py-0.5 bg-primary/20 text-primary text-xs rounded">

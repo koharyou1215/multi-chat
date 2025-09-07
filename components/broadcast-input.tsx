@@ -17,7 +17,7 @@ export function BroadcastInput() {
   const [attachments, setAttachments] = useState<File[]>([]);
 
   const visiblePanels = panels.slice(0, activePanels);
-  const isAnyLoading = visiblePanels.some((p) => p.isLoading);
+  const isAnyLoading = visiblePanels.some((p: any) => p.isLoading);
   const isDisabled = isAnyLoading || !isConfigured;
 
   const [target, setTarget] = useState<"all" | "selected" | "multi">("all");
@@ -47,10 +47,10 @@ export function BroadcastInput() {
       target === "all"
         ? visiblePanels
         : target === "selected"
-        ? visiblePanels.filter((p) => p.id === selectedPanelId)
-        : visiblePanels.filter((p) => multiSendIds.includes(p.id));
+        ? visiblePanels.filter((p: any) => p.id === selectedPanelId)
+        : visiblePanels.filter((p: any) => multiSendIds.includes(p.id));
     await Promise.all(
-      targets.map((panel) =>
+      targets.map((panel: any) =>
         sendMessage(
           panel.id,
           panel.modelId,
