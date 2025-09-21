@@ -67,14 +67,26 @@ export function useOpenRouter() {
       } catch (error) {
         console.error("OpenRouter API error:", error);
 
+        let errorMessage = "不明なエラーが発生しました";
+
+        if (error instanceof Error) {
+          if (error.message.includes("quota exceeded")) {
+            errorMessage = "APIの利用制限に達しました。しばらく待ってからもう一度お試しください。";
+          } else if (error.message.includes("not a valid model")) {
+            errorMessage = `無効なモデルID (${modelId}) です。モデル設定を確認してください。`;
+          } else if (error.message.includes("Invalid JSON")) {
+            errorMessage = "APIからの応答が無効です。しばらく待ってからもう一度お試しください。";
+          } else if (error.message.includes("Model ID is required")) {
+            errorMessage = "モデルIDが設定されていません。パネル設定を確認してください。";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+
         // Add error message
         const errorMsg: ChatMessage = {
           id: generateId(),
-          content: `エラー: ${
-            error instanceof Error
-              ? error.message
-              : "不明なエラーが発生しました"
-          }`,
+          content: `エラー: ${errorMessage}`,
           role: "assistant",
           timestamp: new Date(),
           panelId,
@@ -82,6 +94,7 @@ export function useOpenRouter() {
         };
 
         addMessage(panelId, errorMsg);
+        updatePanel(panelId, { error: errorMessage });
       } finally {
         updatePanel(panelId, { isLoading: false });
       }

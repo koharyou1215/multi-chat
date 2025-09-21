@@ -27,17 +27,15 @@ export function ChatMessage({ message }: ChatMessageProps) {
     <div
       className={cn(
         "group relative flex gap-3 p-3 rounded-lg",
-        isUser
-          ? "bg-primary/10 border border-primary/20"
-          : "bg-muted/50 border border-border"
+        isUser ? "" : ""
       )}>
       {/* Avatar */}
       <div
         className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center",
+          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
           isUser
-            ? "bg-primary text-primary-foreground"
-            : "bg-muted text-muted-foreground"
+            ? "gradient-primary text-white"
+            : "gradient-secondary text-white"
         )}>
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
       </div>
@@ -55,12 +53,28 @@ export function ChatMessage({ message }: ChatMessageProps) {
         </div>
 
         {/* Message Content */}
-        <div className="text-sm text-foreground whitespace-pre-wrap break-words">
-          {isUser && message.content.length > 240 ? (
-            <>
-              <div className={expanded ? "" : "line-clamp-5"}>
+        <div className="text-sm whitespace-pre-wrap break-words">
+          {isUser ? (
+            <div className="max-w-xs px-4 py-3 gradient-primary rounded-2xl rounded-br-none text-white text-sm">
+              {message.content}
+            </div>
+          ) : (
+            <div className="max-w-xs">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 gradient-secondary rounded-full flex items-center justify-center">
+                  <span className="text-xs">AI</span>
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {getModelName(message.modelId || "unknown")}
+                </span>
+              </div>
+              <div className="px-4 py-3 glass-card rounded-2xl rounded-bl-none text-sm text-foreground">
                 {message.content}
               </div>
+            </div>
+          )}
+          {isUser && message.content.length > 240 && (
+            <>
               <button
                 className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 onClick={() => setExpanded(!expanded)}>
@@ -73,8 +87,6 @@ export function ChatMessage({ message }: ChatMessageProps) {
                 {expanded ? "短く表示" : "全文表示"}
               </button>
             </>
-          ) : (
-            <>{message.content}</>
           )}
         </div>
 

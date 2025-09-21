@@ -5,8 +5,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MultiChat AI - Multi-Model Chat Interface',
-  description: 'Chat with multiple AI models simultaneously',
+  title: 'MultiChat AI - ChatHub Style Multi-Model Comparison',
+  description: 'Compare AI responses from multiple models simultaneously',
 }
 
 export default function RootLayout({
@@ -15,8 +15,10 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja">
-      <body className={inter.className}>{children}</body>
+    <html lang="en" suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   )
 }

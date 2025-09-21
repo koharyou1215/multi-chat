@@ -1,4 +1,5 @@
 import { ChatMessage } from "@/types";
+import { validateModelId } from "@/lib/model-validator";
 
 export interface OpenRouterContentPartText {
   type: "text";
@@ -48,6 +49,9 @@ export class OpenRouterClient {
     messages: ChatMessage[],
     systemPrompt?: string
   ): Promise<string> {
+    // Validate and correct model ID using central validator
+    const validatedModel = validateModelId(model);
+
     const openRouterMessages: OpenRouterMessage[] = [];
 
     // Add system prompt if provided
@@ -83,38 +87,69 @@ export class OpenRouterClient {
     });
 
     const requestBody = {
-      model,
+      model: validatedModel,
       messages: openRouterMessages,
       temperature: 0.7,
       max_tokens: 4000,
       stream: false,
     };
 
-    const response = await fetch(`${this.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": window.location.origin,
-        "X-Title": "MultiChat AI",
-      },
-      body: JSON.stringify(requestBody),
-    });
+    try {
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "MultiChat AI",
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.text();
-      throw new Error(
-        `OpenRouter API error (${response.status}): ${errorData}`
-      );
+      if (!response.ok) {
+        let errorMessage = `OpenRouter API error (${response.status})`;
+
+        try {
+          const errorData = await response.text();
+          errorMessage += `: ${errorData}`;
+
+          // Handle specific error cases
+          if (response.status === 429) {
+            throw new Error("API quota exceeded. Please wait and try again later.");
+          } else if (response.status === 400 && errorData.includes("not a valid model")) {
+            throw new Error(`Invalid model ID: ${validatedModel}. Please check the model configuration.`);
+          }
+        } catch (parseError) {
+          console.warn("Could not parse error response:", parseError);
+        }
+
+        throw new Error(errorMessage);
+      }
+
+      let data: OpenRouterResponse;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error("Invalid JSON response from API. The response may be corrupted.");
+      }
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error("No response from OpenRouter API");
+      }
+
+      return data.choices[0].message.content;
+    } catch (error) {
+      // Enhanced error logging
+      console.error("OpenRouter API Error Details:", {
+        model: validatedModel,
+        originalModel: model,
+        error: error instanceof Error ? error.message : error,
+        timestamp: new Date().toISOString()
+      });
+
+      // Re-throw the error for handling by the calling code
+      throw error;
     }
-
-    const data: OpenRouterResponse = await response.json();
-
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error("No response from OpenRouter API");
-    }
-
-    return data.choices[0].message.content;
   }
 
   async validateApiKey(): Promise<boolean> {

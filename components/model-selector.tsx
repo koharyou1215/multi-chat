@@ -1,80 +1,202 @@
 "use client";
 
 import { useAppStore } from "@/store/use-app-store";
-import { useState } from "react";
-import { availableModels, getModelsByGroup } from "@/lib/models";
+import { useState, useRef, useEffect } from "react";
+import { availableModels, getModelsByGroup, getModelById } from "@/lib/models";
 import * as Select from "@radix-ui/react-select";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ModelPill } from "./ui/model-pill";
 
 interface ModelSelectorProps {
-  panelId: string;
-  currentModelId: string;
+  // Support both interfaces
+  panelId?: string;  // For panel-specific usage
+  currentModelId?: string; // For panel-specific usage
+  value?: string; // For controlled component usage
+  onChange?: (modelId: string) => void; // For controlled component usage
+  className?: string;
+  variant?: "radix" | "custom"; // Choose implementation style
 }
 
-export function ModelSelector({ panelId, currentModelId }: ModelSelectorProps) {
+export function ModelSelector({
+  panelId,
+  currentModelId,
+  value,
+  onChange,
+  className,
+  variant = "radix"
+}: ModelSelectorProps) {
   const { setModelForPanel } = useAppStore();
   const modelGroups = getModelsByGroup();
   const [open, setOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <Select.Root
-      open={open}
-      onOpenChange={setOpen}
-      value={currentModelId}
-      onValueChange={(value) => setModelForPanel(panelId, value)}>
-      <Select.Trigger
-        className={cn(
-          "relative flex items-center justify-between w-full px-2 py-1 text-xs",
-          "bg-background border border-input rounded-full",
-          "focus:outline-none focus:ring-2 focus:ring-ring",
-          "hover:bg-accent hover:text-accent-foreground",
-          "disabled:cursor-not-allowed disabled:opacity-50"
-        )}
-        onPointerDown={(e) => {
-          e.stopPropagation();
-        }}>
-        <div className="flex items-center gap-2">
-          <ModelPill modelId={currentModelId} />
-        </div>
-        <Select.Icon>
-          <ChevronDown className="w-3 h-3 opacity-50" />
-        </Select.Icon>
-      </Select.Trigger>
+  // Determine which model ID and change handler to use
+  const modelId = currentModelId || value || '';
+  const handleChange = (newModelId: string) => {
+    if (panelId && setModelForPanel) {
+      setModelForPanel(panelId, newModelId);
+    }
+    if (onChange) {
+      onChange(newModelId);
+    }
+  };
 
-      <Select.Portal>
-        <Select.Content
-          position="popper"
-          sideOffset={6}
-          className="bg-popover border border-border rounded-md shadow-lg max-h-80 overflow-auto z-[9999]">
-          <Select.Viewport className="p-1">
-            {Object.entries(modelGroups).map(([group, models]) => (
-              <div key={group}>
-                <Select.Group>
-                  <Select.Label className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+  const currentModel = getModelById(modelId);
+
+  // Close dropdown on outside click (for custom variant)
+  useEffect(() => {
+    if (variant !== "custom") return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [open, variant]);
+
+  // Radix UI implementation (glass morphism style)
+  if (variant === "radix") {
+    return (
+      <Select.Root
+        open={open}
+        onOpenChange={setOpen}
+        value={modelId}
+        onValueChange={handleChange}>
+        <Select.Trigger
+          className={cn(
+            "relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs",
+            "rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20",
+            "border border-purple-400/30 backdrop-blur-sm",
+            "hover:from-purple-500/30 hover:to-pink-500/30",
+            "transition-all duration-200",
+            "focus:outline-none focus:ring-2 focus:ring-purple-400/50",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            className
+          )}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}>
+          <span className="font-medium text-purple-200">
+            <ModelPill modelId={modelId} />
+          </span>
+          <Select.Icon>
+            <ChevronDown className="w-3 h-3 text-purple-300" />
+          </Select.Icon>
+        </Select.Trigger>
+
+        <Select.Portal>
+          <Select.Content
+            position="popper"
+            sideOffset={5}
+            align="center"
+            className={cn(
+              "z-50 min-w-[180px] overflow-hidden",
+              "rounded-xl bg-gray-900/95 backdrop-blur-xl",
+              "border border-white/10 shadow-2xl",
+              "animate-in fade-in-0 zoom-in-95"
+            )}>
+            <Select.Viewport className="p-1">
+              {Object.entries(modelGroups).map(([group, models]) => (
+                <div key={group}>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-purple-300 uppercase tracking-wider">
                     {group}
-                  </Select.Label>
+                  </div>
                   {models.map((model) => (
                     <Select.Item
                       key={model.id}
                       value={model.id}
                       className={cn(
-                        "relative flex cursor-default select-none items-center",
-                        "px-2 py-1.5 text-sm outline-none",
-                        "focus:bg-accent focus:text-accent-foreground",
-                        "data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+                        "relative flex items-center justify-between px-2 py-1.5 text-sm",
+                        "rounded-lg outline-none cursor-pointer",
+                        "hover:bg-purple-500/20 hover:text-purple-200",
+                        "focus:bg-purple-500/20 focus:text-purple-200",
+                        "data-[state=checked]:bg-purple-500/30 data-[state=checked]:text-purple-100",
+                        "transition-colors"
                       )}>
                       <Select.ItemText>{model.name}</Select.ItemText>
+                      {model.description && (
+                        <span className="text-xs text-gray-400 ml-2">{model.description}</span>
+                      )}
                     </Select.Item>
                   ))}
-                </Select.Group>
-                <Select.Separator className="h-px bg-border my-1" />
+                </div>
+              ))}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
+    );
+  }
+
+  // Custom dropdown implementation (simple style)
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          setOpen(!open);
+        }}
+        className={cn(
+          'flex items-center gap-2 px-2 py-1 rounded',
+          'hover:bg-accent transition-colors',
+          'text-sm font-medium',
+          className
+        )}
+      >
+        <Bot className="w-3 h-3" />
+        <span className="truncate">
+          {currentModel?.name || 'Select Model'}
+        </span>
+        <ChevronDown className={cn(
+          'w-4 h-4 transition-transform duration-200',
+          open && 'rotate-180'
+        )} />
+      </button>
+
+      {open && (
+        <div className={cn(
+          'absolute top-full mt-1 z-50',
+          'min-w-[200px] max-h-[400px] overflow-auto',
+          'bg-popover border rounded-lg shadow-lg',
+          'animate-in fade-in-0 zoom-in-95'
+        )}>
+          {Object.entries(modelGroups).map(([group, models]) => (
+            <div key={group}>
+              <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {group}
               </div>
-            ))}
-          </Select.Viewport>
-        </Select.Content>
-      </Select.Portal>
-    </Select.Root>
+              {models.map((model) => (
+                <button
+                  key={model.id}
+                  onClick={() => {
+                    handleChange(model.id);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    'w-full text-left px-3 py-2 text-sm',
+                    'hover:bg-accent transition-colors',
+                    'flex items-center justify-between',
+                    model.id === modelId && 'bg-accent'
+                  )}
+                >
+                  <span>{model.name}</span>
+                  {model.contextWindow && (
+                    <span className="text-xs text-muted-foreground ml-2">
+                      {Math.floor(model.contextWindow / 1000)}K
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
