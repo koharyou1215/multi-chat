@@ -59,7 +59,7 @@ export function CommandBar({ onSendMessage, disabled = false }: CommandBarProps)
     if (parsed.isCommand) {
       // Handle command execution
       // This will be connected to command registry
-      console.log('Executing command:', parsed)
+      // Executing command: ${JSON.stringify(parsed)}
       setInput('')
       setCommandPaletteOpen(false)
     } else {

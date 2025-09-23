@@ -90,7 +90,9 @@ export function CommandPalette() {
         break
       default:
         // Try to execute from registry
-        commandRegistry.execute(trigger, args).catch(console.error)
+        commandRegistry.execute(trigger, args).catch(error => {
+          // Command execution error: ${error}
+        })
     }
 
     // Close palette

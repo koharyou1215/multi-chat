@@ -3,17 +3,28 @@
 import type { ChatMessage as ChatMessageType } from "@/types";
 import { cn, formatTimestamp } from "@/lib/utils";
 import { getModelName } from "@/lib/models";
-import { Copy, User, Bot, ChevronDown } from "lucide-react";
+import { Copy, User, Bot, Edit2, RefreshCw, Star } from "lucide-react";
+import { useAppStore } from "@/store/use-app-store";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  panelColor?: string;
+  onEditMessage?: (messageId: string, newContent: string) => void;
+  onRegenerateMessage?: (messageId: string) => void;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  panelColor = "from-blue-600 via-purple-600 to-indigo-600",
+  onEditMessage,
+  onRegenerateMessage,
+}: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
+  const store = useAppStore();
 
   const copyToClipboard = async () => {
     await navigator.clipboard.writeText(message.content);
@@ -22,105 +33,157 @@ export function ChatMessage({ message }: ChatMessageProps) {
   };
 
   const isUser = message.role === "user";
+  const [showTyping, setShowTyping] = useState(false);
+
+  // Show typing animation for new AI messages
+  useEffect(() => {
+    if (!isUser && message.content) {
+      setShowTyping(true);
+      const timer = setTimeout(() => setShowTyping(false), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [message.content, isUser]);
+
+  const handleEdit = () => {
+    if (isEditing && onEditMessage) {
+      onEditMessage(message.id, editContent);
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+  };
+
+  const handleRegenerate = () => {
+    if (onRegenerateMessage) {
+      // Clear conversation history and regenerate as new conversation
+      onRegenerateMessage(message.id);
+    }
+  };
 
   return (
     <div
       className={cn(
-        "group relative flex gap-3 p-3 rounded-lg",
-        isUser ? "" : ""
+        "group relative flex",
+        isUser ? "justify-end" : "justify-start",
+        "mb-4"
       )}>
-      {/* Avatar */}
-      <div
-        className={cn(
-          "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center shadow-sm",
-          isUser
-            ? "gradient-primary text-white"
-            : "gradient-secondary text-white"
-        )}>
-        {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 min-w-0">
-        {/* Header */}
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-sm font-medium text-foreground">
-            {isUser ? "ユーザー" : getModelName(message.modelId || "unknown")}
-          </span>
-          <span className="text-xs text-muted-foreground">
-            {formatTimestamp(message.timestamp)}
-          </span>
-        </div>
-
+      <div className={cn("max-w-[70%]", "relative")}>
         {/* Message Content */}
-        <div className="text-sm whitespace-pre-wrap break-words">
-          {isUser ? (
-            <div className="max-w-xs px-4 py-3 gradient-primary rounded-2xl rounded-br-none text-white text-sm">
-              {message.content}
-            </div>
-          ) : (
-            <div className="max-w-xs">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-6 h-6 gradient-secondary rounded-full flex items-center justify-center">
-                  <span className="text-xs">AI</span>
+        {isUser ? (
+          // User Message with colored bubble
+          <div className="relative">
+            {isEditing ? (
+              <textarea
+                value={editContent}
+                onChange={(e) => setEditContent(e.target.value)}
+                className="w-full p-3 rounded-xl bg-gray-800 text-white resize-none"
+                rows={3}
+              />
+            ) : (
+              <div className="relative">
+                {/* Speech bubble with proper design */}
+                <div
+                  className="rounded-2xl rounded-br-none px-4 py-3 text-white text-sm"
+                  style={{
+                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
+                    maxWidth: "320px"
+                  }}>
+                  {message.content}
                 </div>
-                <span className="text-xs text-muted-foreground">
-                  {getModelName(message.modelId || "unknown")}
-                </span>
+                {/* User message icons - no white backgrounds */}
+                <div className="absolute -bottom-8 right-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
+                  <button
+                    onClick={copyToClipboard}
+                    className="message-action-btn"
+                    title="コピー">
+                    <Copy className="w-4 h-4 text-gray-400 hover:text-white transition-colors" />
+                  </button>
+                  <button
+                    onClick={() => store.addFavorite?.(message)}
+                    className="message-action-btn"
+                    title="お気に入りに追加">
+                    <Star className="w-4 h-4 text-gray-400 hover:text-white transition-colors" />
+                  </button>
+                  <button
+                    onClick={handleEdit}
+                    className="message-action-btn"
+                    title={isEditing ? "確定" : "編集"}>
+                    <Edit2 className="w-4 h-4 text-gray-400 hover:text-white transition-colors" />
+                  </button>
+                </div>
               </div>
-              <div className="px-4 py-3 glass-card rounded-2xl rounded-bl-none text-sm text-foreground">
+            )}
+          </div>
+        ) : (
+          // AI Message with glass morphism bubble
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="avatar-ai">
+                <span className="text-xs text-white font-bold">AI</span>
+              </div>
+              <span className="text-xs text-gray-400">
+                {getModelName(message.modelId || "unknown")}
+              </span>
+            </div>
+            {showTyping && !message.content ? (
+              <div className="bg-gray-800/60 rounded-2xl px-4 py-3 backdrop-blur-sm">
+                <div className="flex gap-1">
+                  <span
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "0ms" }}
+                  />
+                  <span
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "150ms" }}
+                  />
+                  <span
+                    className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                    style={{ animationDelay: "300ms" }}
+                  />
+                </div>
+              </div>
+            ) : (
+              <div
+                className="rounded-2xl rounded-bl-none px-4 py-3 text-sm text-white"
+                style={{
+                  background: "rgba(30, 30, 40, 0.9)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+                  maxWidth: "320px"
+                }}>
                 {message.content}
               </div>
-            </div>
-          )}
-          {isUser && message.content.length > 240 && (
-            <>
+            )}
+            {/* AI message actions - no white backgrounds */}
+            <div className="flex items-center gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
-                className="mt-1 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                onClick={() => setExpanded(!expanded)}>
-                <ChevronDown
-                  className={
-                    "w-3 h-3 transition-transform " +
-                    (expanded ? "rotate-180" : "")
-                  }
-                />
-                {expanded ? "短く表示" : "全文表示"}
+                onClick={copyToClipboard}
+                className="message-action-btn"
+                title={copied ? "コピーしました" : "コピー"}>
+                <Copy className="w-4 h-4 text-gray-400 hover:text-white transition-colors" />
               </button>
-            </>
-          )}
-        </div>
-
-        {/* Attachments */}
-        {message.attachments && message.attachments.length > 0 && (
-          <div className="mt-2 flex flex-wrap gap-2">
-            {message.attachments.map((attachment) => (
-              <div
-                key={attachment.id}
-                className="flex items-center gap-2 px-2 py-1 bg-background border rounded text-xs">
-                <span>{attachment.name}</span>
-              </div>
-            ))}
+              <button
+                onClick={() => store.addFavorite?.(message)}
+                className="message-action-btn"
+                title="お気に入りに追加">
+                <Star className="w-4 h-4 text-gray-400 hover:text-white transition-colors" />
+              </button>
+              {onRegenerateMessage && (
+                <button
+                  onClick={handleRegenerate}
+                  className="message-action-btn"
+                  title="再生成">
+                  <RefreshCw className="w-4 h-4 text-gray-400 hover:text-white transition-colors" />
+                </button>
+              )}
+            </div>
           </div>
         )}
-      </div>
-
-      {/* Actions */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={copyToClipboard}>
-          <Copy className="w-3 h-3" />
-        </Button>
-      </div>
-
-      {/* Copy feedback */}
-      {copied && (
-        <div className="absolute top-0 right-0 -mt-8 bg-foreground text-background px-2 py-1 rounded text-xs">
-          コピーしました
+        <div className="text-xs text-gray-400 mt-1">
+          {formatTimestamp(message.timestamp)}
         </div>
-      )}
+      </div>
     </div>
   );
 }

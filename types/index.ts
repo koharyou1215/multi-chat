@@ -30,7 +30,7 @@ export interface Attachment {
 export interface PromptVariable {
   name: string;
   description?: string;
-  type: 'text' | 'number' | 'boolean' | 'select' | 'date';
+  type: "text" | "number" | "boolean" | "select" | "date";
   defaultValue?: any;
   required?: boolean;
   options?: string[]; // For select type
@@ -48,6 +48,7 @@ export interface CustomPrompt {
   originalContent?: string;
   variables?: PromptVariable[];
   category?: string;
+  isFavorite?: boolean;
 }
 
 export interface ChatPanel {
@@ -76,7 +77,7 @@ export interface PromptUsageHistoryItem {
 }
 
 // Additional types for chat-store compatibility
-export type SendMode = 'all' | 'selected' | 'group';
+export type SendMode = "all" | "selected" | "group";
 
 export interface Prompt {
   id: string;
@@ -108,10 +109,12 @@ export interface ChatState {
   multiSendIds: string[]; // Legacy compatibility
   promptHistory: PromptUsageHistoryItem[];
   openRouterApiKey?: string; // Will be migrated to settings.apiKeys
+  // Favorites (user-saved messages)
+  favorites: ChatMessage[];
 }
 
 export interface AppSettings {
-  theme: 'light' | 'dark' | 'system';
+  theme: "light" | "dark" | "system";
   panelCount: number;
   defaultModels: Record<string, string>;
   apiKeys: Record<string, string>;

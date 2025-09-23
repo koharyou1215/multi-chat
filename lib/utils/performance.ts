@@ -40,7 +40,7 @@ class ChatPanelPerformanceMonitor {
 
   private processPerformanceEntry(entry: PerformanceEntry) {
     if (entry.name.includes('ChatPanel')) {
-      console.log(`Performance: ${entry.name} - ${entry.duration}ms`);
+      // Performance: ${entry.name} - ${entry.duration}ms
     }
   }
 
@@ -84,11 +84,20 @@ class ChatPanelPerformanceMonitor {
 
   // Get memory usage (if available)
   getMemoryUsage(): number {
-    if (typeof window !== 'undefined' && 'performance' in window && 'memory' in (performance as any)) {
+    if (this.hasMemoryInfo()) {
       const memory = (performance as any).memory;
       return memory.usedJSHeapSize / 1024 / 1024; // Convert to MB
     }
     return 0;
+  }
+
+  // Type guard for memory info availability
+  private hasMemoryInfo(): boolean {
+    return typeof window !== 'undefined' &&
+           'performance' in window &&
+           'memory' in performance &&
+           typeof (performance as any).memory === 'object' &&
+           'usedJSHeapSize' in (performance as any).memory;
   }
 
   // Update metrics for a component
@@ -180,7 +189,7 @@ export const usePerformanceMonitoring = (componentId: string) => {
         performanceMonitor.endMeasurement(componentId);
 
         if (duration > 16) { // Longer than 16ms (60fps threshold)
-          console.warn(`Slow render detected for ${componentId}: ${duration.toFixed(2)}ms`);
+          // Slow render detected for ${componentId}: ${duration.toFixed(2)}ms
         }
       }
     };
@@ -217,7 +226,7 @@ export const analyzeBundleSize = async (): Promise<void> => {
     }
 
     console.group('Bundle Analysis');
-    console.log(`Total Bundle Size: ${(totalSize / 1024).toFixed(2)}KB`);
+    // Total Bundle Size: ${(totalSize / 1024).toFixed(2)}KB
     console.table(bundleInfo);
     console.groupEnd();
   }
@@ -242,17 +251,26 @@ export const runPerformanceTest = async (
   const min = Math.min(...times);
   const max = Math.max(...times);
 
-  console.log(`Performance Test: ${testName}`);
-  console.log(`Average: ${average.toFixed(2)}ms`);
-  console.log(`Min: ${min.toFixed(2)}ms`);
-  console.log(`Max: ${max.toFixed(2)}ms`);
+  // Performance Test: ${testName}
+  // Average: ${average.toFixed(2)}ms
+  // Min: ${min.toFixed(2)}ms
+  // Max: ${max.toFixed(2)}ms
 
   return average;
 };
 
+// Type guard for memory info availability
+const hasMemoryInfo = (): boolean => {
+  return typeof window !== 'undefined' &&
+         'performance' in window &&
+         'memory' in performance &&
+         typeof (performance as any).memory === 'object' &&
+         'usedJSHeapSize' in (performance as any).memory;
+};
+
 // Memory leak detection
 export const detectMemoryLeaks = (): void => {
-  if (typeof window !== 'undefined' && 'performance' in window && 'memory' in (performance as any)) {
+  if (hasMemoryInfo()) {
     const memory = (performance as any).memory;
     const initialMemory = memory.usedJSHeapSize;
 
@@ -261,7 +279,7 @@ export const detectMemoryLeaks = (): void => {
       const memoryIncrease = currentMemory - initialMemory;
 
       if (memoryIncrease > 5 * 1024 * 1024) { // 5MB increase
-        console.warn(`Potential memory leak detected: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB increase`);
+        // Potential memory leak detected: ${(memoryIncrease / 1024 / 1024).toFixed(2)}MB increase
       }
     }, 10000); // Check after 10 seconds
   }

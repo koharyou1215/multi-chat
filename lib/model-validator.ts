@@ -5,7 +5,7 @@ import { availableModels } from './models';
  */
 export function validateModelId(modelId: string): string {
   if (!modelId || modelId.trim() === '') {
-    console.warn('Empty model ID provided, falling back to default');
+    // Empty model ID provided, falling back to default
     return 'google/gemini-2.5-flash';
   }
 
@@ -27,24 +27,24 @@ export function validateModelId(modelId: string): string {
 
   // Check for mapped models
   if (modelMappings[modelId]) {
-    console.warn(`Invalid model ID "${modelId}" mapped to "${modelMappings[modelId]}"`);
+    // Invalid model ID "${modelId}" mapped to "${modelMappings[modelId]}"
     return modelMappings[modelId];
   }
 
   // If it's a Gemini model but not in our list, use Flash as default
   if (modelId.toLowerCase().includes('gemini')) {
-    console.warn(`Unknown Gemini model "${modelId}", falling back to gemini-2.5-flash`);
+    // Unknown Gemini model "${modelId}", falling back to gemini-2.5-flash
     return 'google/gemini-2.5-flash';
   }
 
   // If it's a Claude model but not in our list, use Sonnet as default
   if (modelId.toLowerCase().includes('claude')) {
-    console.warn(`Unknown Claude model "${modelId}", falling back to claude-sonnet-4`);
+    // Unknown Claude model "${modelId}", falling back to claude-sonnet-4
     return 'anthropic/claude-sonnet-4';
   }
 
   // For any other unknown model, use the default
-  console.warn(`Unknown model ID "${modelId}", falling back to default`);
+  // Unknown model ID "${modelId}", falling back to default
   return 'google/gemini-2.5-flash';
 }
 

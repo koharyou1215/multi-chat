@@ -137,7 +137,7 @@ export function useAppHotkeys() {
     },
     [HOTKEYS.SEND_MESSAGE]: () => {
       // Will be connected to send message action
-      console.log('Send message hotkey')
+      // Send message hotkey
     },
     [HOTKEYS.CLEAR_CHAT]: () => {
       store.clearAllMessages()
@@ -150,7 +150,7 @@ export function useAppHotkeys() {
     },
     [HOTKEYS.NEW_PROMPT]: () => {
       // Will be connected to new prompt action
-      console.log('New prompt hotkey')
+      // New prompt hotkey
     },
     [HOTKEYS.FOCUS_INPUT]: () => {
       // Focus the main input

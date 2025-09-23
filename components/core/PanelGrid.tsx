@@ -8,7 +8,7 @@ export function PanelGrid() {
   const { panels, activePanelIds, settings } = useChatStore()
 
   // Get active panels
-  const activePanels = panels.filter((panel: any) =>
+  const activePanels = panels.filter(panel =>
     activePanelIds.includes(panel.id)
   ).slice(0, settings.panelCount)
 
@@ -56,7 +56,7 @@ export function PanelGrid() {
             isSpecialLayout ? specialGridClass : getGridClassName(activePanels.length)
           )}
         >
-          {activePanels.map((panel: any) => (
+          {activePanels.map(panel => (
             <ChatPanel
               key={panel.id}
               panel={panel}

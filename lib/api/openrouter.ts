@@ -120,7 +120,7 @@ export class OpenRouterClient {
             throw new Error(`Invalid model ID: ${validatedModel}. Please check the model configuration.`);
           }
         } catch (parseError) {
-          console.warn("Could not parse error response:", parseError);
+          // Could not parse error response: ${parseError}
         }
 
         throw new Error(errorMessage);
@@ -140,12 +140,7 @@ export class OpenRouterClient {
       return data.choices[0].message.content;
     } catch (error) {
       // Enhanced error logging
-      console.error("OpenRouter API Error Details:", {
-        model: validatedModel,
-        originalModel: model,
-        error: error instanceof Error ? error.message : error,
-        timestamp: new Date().toISOString()
-      });
+      // OpenRouter API Error Details: model=${validatedModel}, originalModel=${model}, error=${error instanceof Error ? error.message : error}
 
       // Re-throw the error for handling by the calling code
       throw error;

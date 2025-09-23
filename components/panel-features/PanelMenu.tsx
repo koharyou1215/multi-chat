@@ -87,7 +87,7 @@ export const PanelMenu = memo<PanelMenuProps>(({ panel, onClose, onClear }) => {
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Export failed:', error);
+      // Export failed: ${error}
     }
     onClose();
   }, [panel, onClose]);
@@ -100,14 +100,14 @@ export const PanelMenu = memo<PanelMenuProps>(({ panel, onClose, onClear }) => {
 
       await navigator.clipboard.writeText(chatText);
     } catch (error) {
-      console.error('Copy failed:', error);
+      // Copy failed: ${error}
     }
     onClose();
   }, [panel.messages, onClose]);
 
   const handleShare = useCallback(() => {
     // Placeholder for share functionality
-    console.log('Share panel:', panel.id);
+    // Share panel: ${panel.id}
     onClose();
   }, [panel.id, onClose]);
 

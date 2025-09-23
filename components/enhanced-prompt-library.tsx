@@ -53,7 +53,7 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
     multiSendIds,
     addPromptHistory,
     promptHistory,
-  } = useAppStore() as any;
+  } = useAppStore();
 
   const [editingPrompt, setEditingPrompt] = useState<CustomPrompt | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -67,16 +67,16 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
 
     // Category filter
     if (selectedCategory === "favorites") {
-      filtered = filtered.filter((p: any) => p.isFavorite);
+      filtered = filtered.filter(p => p.isFavorite);
     } else if (selectedCategory === "recent") {
       // Get recently used prompt IDs from history
       const recentIds = promptHistory
         .slice(0, 10)
-        .map((h: any) => h.promptId);
-      filtered = filtered.filter((p: any) => recentIds.includes(p.id));
+        .map((h) => h.promptId);
+      filtered = filtered.filter(p => recentIds.includes(p.id));
     } else if (selectedCategory !== "all") {
-      filtered = filtered.filter((p: any) =>
-        p.tags?.some((tag: string) =>
+      filtered = filtered.filter(p =>
+        p.tags?.some(tag =>
           tag.toLowerCase().includes(selectedCategory.toLowerCase())
         )
       );
@@ -85,10 +85,10 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
     // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter((p: any) =>
+      filtered = filtered.filter(p =>
         p.title.toLowerCase().includes(query) ||
         p.content.toLowerCase().includes(query) ||
-        p.tags?.some((tag: string) => tag.toLowerCase().includes(query))
+        p.tags?.some(tag => tag.toLowerCase().includes(query))
       );
     }
 
@@ -120,7 +120,7 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
             addCustomPrompt({ ...prompt, id: generateId() });
           });
         } catch (error) {
-          console.error("Failed to import prompts:", error);
+          // Failed to import prompts: ${error}
         }
       };
       reader.readAsText(file);
@@ -129,7 +129,7 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
 
   // Toggle favorite status
   const toggleFavorite = (promptId: string) => {
-    const prompt = customPrompts.find((p: any) => p.id === promptId);
+    const prompt = customPrompts.find(p => p.id === promptId);
     if (prompt) {
       updateCustomPrompt(promptId, {
         ...prompt,
@@ -141,11 +141,11 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
+        <Dialog.Overlay className="fixed inset-0 bg-black/70 z-50" />
         <Dialog.Content
           className={cn(
             "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
-            "bg-card border rounded-lg shadow-lg w-full max-w-6xl h-[85vh] z-50",
+            "bg-gray-900 border border-purple-500/30 rounded-lg shadow-2xl w-full max-w-6xl h-[85vh] z-50",
             "flex flex-col"
           )}>
           {/* Header */}
@@ -204,7 +204,7 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
                     <span>{category.name}</span>
                     {category.id === "favorites" && (
                       <span className="ml-auto text-xs">
-                        {customPrompts.filter((p: any) => p.isFavorite).length}
+                        {customPrompts.filter(p => p.isFavorite).length}
                       </span>
                     )}
                   </button>
@@ -267,14 +267,16 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
                         onSelect={() => setEditingPrompt(prompt)}
                         onToggleFavorite={() => toggleFavorite(prompt.id)}
                         onApply={() => {
-                          applyPromptToPanel(selectedPanelId, prompt.id);
-                          addPromptHistory({
-                            id: generateId(),
-                            promptId: prompt.id,
-                            title: prompt.title,
-                            panelIds: [selectedPanelId],
-                            appliedAt: new Date(),
-                          });
+                          if (selectedPanelId) {
+                            applyPromptToPanel(selectedPanelId, prompt.id);
+                            addPromptHistory({
+                              id: generateId(),
+                              promptId: prompt.id,
+                              title: prompt.title,
+                              panelIds: [selectedPanelId],
+                              appliedAt: new Date(),
+                            });
+                          }
                           onClose();
                         }}
                       />
@@ -290,14 +292,16 @@ export function EnhancedPromptLibrary({ open, onClose }: EnhancedPromptLibraryPr
                         onSelect={() => setEditingPrompt(prompt)}
                         onToggleFavorite={() => toggleFavorite(prompt.id)}
                         onApply={() => {
-                          applyPromptToPanel(selectedPanelId, prompt.id);
-                          addPromptHistory({
-                            id: generateId(),
-                            promptId: prompt.id,
-                            title: prompt.title,
-                            panelIds: [selectedPanelId],
-                            appliedAt: new Date(),
-                          });
+                          if (selectedPanelId) {
+                            applyPromptToPanel(selectedPanelId, prompt.id);
+                            addPromptHistory({
+                              id: generateId(),
+                              promptId: prompt.id,
+                              title: prompt.title,
+                              panelIds: [selectedPanelId],
+                              appliedAt: new Date(),
+                            });
+                          }
                           onClose();
                         }}
                       />
@@ -388,7 +392,7 @@ function PromptCard({ prompt, isSelected, onSelect, onToggleFavorite, onApply }:
           }}
           className="text-muted-foreground hover:text-yellow-500 transition-colors"
         >
-          {(prompt as any).isFavorite ? (
+          {prompt.isFavorite ? (
             <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
           ) : (
             <StarOff className="w-4 h-4" />
@@ -464,7 +468,7 @@ function PromptListItem({ prompt, isSelected, onSelect, onToggleFavorite, onAppl
         }}
         className="text-muted-foreground hover:text-yellow-500 transition-colors"
       >
-        {(prompt as any).isFavorite ? (
+        {prompt.isFavorite ? (
           <Star className="w-4 h-4 fill-yellow-500 text-yellow-500" />
         ) : (
           <StarOff className="w-4 h-4" />

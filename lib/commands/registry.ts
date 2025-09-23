@@ -18,7 +18,7 @@ export class CommandRegistry {
       category: 'system',
       action: async () => {
         // Will be connected to store action
-        console.log('Clearing messages...')
+        // Clearing messages...
       }
     })
 
@@ -28,7 +28,7 @@ export class CommandRegistry {
       description: 'Reset chat to initial state',
       category: 'system',
       action: async () => {
-        console.log('Resetting chat...')
+        // Resetting chat...
       }
     })
 
@@ -38,7 +38,7 @@ export class CommandRegistry {
       description: 'Show available commands',
       category: 'system',
       action: async () => {
-        console.log('Showing help...')
+        // Showing help...
       }
     })
 
@@ -50,7 +50,7 @@ export class CommandRegistry {
       category: 'prompt',
       action: async (args?: string[]) => {
         const title = args?.join(' ') || ''
-        console.log(`Saving prompt as: ${title}`)
+        // Saving prompt as: ${title}
       }
     })
 
@@ -61,7 +61,7 @@ export class CommandRegistry {
       category: 'prompt',
       action: async (args?: string[]) => {
         const promptId = args?.[0] || ''
-        console.log(`Loading prompt: ${promptId}`)
+        // Loading prompt: ${promptId}
       }
     })
 
@@ -71,7 +71,7 @@ export class CommandRegistry {
       description: 'Show prompt library',
       category: 'prompt',
       action: async () => {
-        console.log('Opening prompt library...')
+        // Opening prompt library...
       }
     })
 
@@ -83,7 +83,7 @@ export class CommandRegistry {
       category: 'utility',
       action: async (args?: string[]) => {
         const theme = args?.[0] || 'toggle'
-        console.log(`Setting theme: ${theme}`)
+        // Setting theme: ${theme}
       }
     })
 
@@ -94,7 +94,7 @@ export class CommandRegistry {
       category: 'utility',
       action: async (args?: string[]) => {
         const count = parseInt(args?.[0] || '2') || 2
-        console.log(`Setting panels: ${count}`)
+        // Setting panels: ${count}
       }
     })
 
@@ -105,7 +105,7 @@ export class CommandRegistry {
       category: 'utility',
       action: async (args?: string[]) => {
         const modelId = args?.join(' ') || ''
-        console.log(`Setting model: ${modelId}`)
+        // Setting model: ${modelId}
       }
     })
 
@@ -115,7 +115,7 @@ export class CommandRegistry {
       description: 'Export chat history',
       category: 'utility',
       action: async () => {
-        console.log('Exporting chat...')
+        // Exporting chat...
       }
     })
   }

@@ -65,7 +65,7 @@ export function useOpenRouter() {
 
         addMessage(panelId, aiMsg);
       } catch (error) {
-        console.error("OpenRouter API error:", error);
+        // OpenRouter API error: ${error}
 
         let errorMessage = "不明なエラーが発生しました";
 

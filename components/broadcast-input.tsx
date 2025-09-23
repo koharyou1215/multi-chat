@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent, useEffect } from "react";
+import { useState, useRef, KeyboardEvent } from "react";
 import { Button } from "./ui/button";
 import { Send, Paperclip, X, Clipboard } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/use-app-store";
 import { useOpenRouter } from "@/hooks/use-openrouter";
+import { TIMING, BUTTON_GRADIENTS, COLORS, SIZES, ANIMATIONS, SHADOWS } from "@/lib/constants";
 import { generateId } from "@/lib/utils";
 import type { Attachment } from "@/types";
 
@@ -15,7 +16,7 @@ interface BroadcastInputProps {
 
 export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
   const { panels, activePanels, selectedPanelId, multiSendIds } =
-    useAppStore() as any;
+    useAppStore();
   const { sendMessage, isConfigured } = useOpenRouter();
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -23,95 +24,17 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
   const visiblePanels = panels.slice(0, activePanels);
-  const isAnyLoading = visiblePanels.some((p: any) => p.isLoading);
+  const isAnyLoading = visiblePanels.some((p) => p.isLoading);
   const isDisabled = isAnyLoading || !isConfigured;
 
-  // JavaScriptで強制適用
-  useEffect(() => {
-    const forceButtonStyles = () => {
-      const buttons = document.querySelectorAll(".glass-dark button");
-      buttons.forEach((btn: any) => {
-        // お気に入りボタンは特別な色
-        if (
-          btn.classList.contains("favorite-button") ||
-          btn.title === "お気に入り登録"
-        ) {
-          btn.style.background = "linear-gradient(135deg, #ff9a9e, #fad0c4)";
-          btn.style.color = "#2c3e50";
-          // アイコンも濃い色に
-          const icons = btn.querySelectorAll("*");
-          icons.forEach((icon: any) => {
-            icon.style.color = "#2c3e50";
-          });
-        } else {
-          btn.style.background =
-            "linear-gradient(135deg, #9333ea 0%, #ec4899 100%)";
-          btn.style.color = "white";
-          // アイコンも白に
-          const icons = btn.querySelectorAll("*");
-          icons.forEach((icon: any) => {
-            icon.style.color = "white";
-          });
-        }
-
-        // ボーダーを強制適用
-        btn.style.setProperty(
-          "border",
-          "1px solid rgba(255, 255, 255, 0.5)",
-          "important"
-        );
-        btn.style.setProperty("border-width", "1px", "important");
-        btn.style.setProperty("border-style", "solid", "important");
-        btn.style.setProperty(
-          "border-color",
-          "rgba(255, 255, 255, 0.5)",
-          "important"
-        );
-        btn.style.borderRadius = "20px";
-        btn.style.padding = "8px 16px";
-        btn.style.margin = "4px";
-        btn.style.display = "inline-flex";
-        btn.style.alignItems = "center";
-        btn.style.justifyContent = "center";
-        btn.style.gap = "8px";
-        btn.style.transition = "all 0.2s ease";
-        btn.style.boxShadow =
-          "0 0 0 1px rgba(255, 255, 255, 0.3), 0 0 5px rgba(255, 255, 255, 0.2)";
-      });
-    };
-
-    // 即座に実行
-    forceButtonStyles();
-
-    // 少し遅らせて再実行（DOMが完全に読み込まれた後）
-    setTimeout(forceButtonStyles, 100);
-    setTimeout(forceButtonStyles, 500);
-    setTimeout(forceButtonStyles, 1000);
-    setTimeout(forceButtonStyles, 2000);
-    setTimeout(forceButtonStyles, 3000);
-
-    // さらに確実にするために、MutationObserverも追加
-    const observer = new MutationObserver(() => {
-      setTimeout(forceButtonStyles, 100);
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["class"],
-    });
-
-    return () => {
-      observer.disconnect();
-    };
-  }, []);
+  // DOM操作を削除し、CSSで制御するようにリファクタリング完了
+  // スタイルは app/broadcast-styles.css で管理
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
       const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 120)}px`;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, TIMING.MAX_TEXTAREA_HEIGHT)}px`;
     }
   };
 
@@ -131,19 +54,23 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     // チェックボックスで選択されたパネルに送信
     const targets =
       multiSendIds.length > 0
-        ? visiblePanels.filter((p: any) => multiSendIds.includes(p.id))
+        ? visiblePanels.filter((p) => multiSendIds.includes(p.id))
         : visiblePanels;
 
-    for (const panel of targets) {
-      await sendMessage(
+    // 並列送信：全てのパネルに同時にメッセージを送信
+    const sendPromises = targets.map(panel =>
+      sendMessage(
         panel.id,
         panel.modelId,
         trimmed,
         panel.messages || [],
         panel.customPrompt?.content,
         attachments
-      );
-    }
+      )
+    );
+
+    // 全ての送信完了を待つ（但し、各パネルは独立して処理される）
+    await Promise.allSettled(sendPromises);
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -179,7 +106,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
       setValue(value + text);
       adjustTextareaHeight();
     } catch (err) {
-      console.error("貼り付けに失敗:", err);
+      // 貼り付けに失敗: ${err}
     }
   };
 
@@ -238,15 +165,15 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
           <div className="flex items-center gap-6 w-full px-2">
             {/* File Attachment Button */}
             <button
-              className="px-3 py-2 rounded-2xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center"
+              className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center"
               style={{
-                background: "linear-gradient(135deg, #9333ea 0%, #ec4899 100%)",
-                color: "#2c3e50",
+                background: BUTTON_GRADIENTS.PRIMARY,
+                color: COLORS.TEXT_DARK,
               }}
               onClick={() => fileInputRef.current?.click()}
               disabled={isDisabled}
               title="ファイルを添付">
-              <Paperclip className="w-4 h-4" style={{ color: "#2c3e50" }} />
+              <Paperclip className="w-3.5 h-3.5" style={{ color: COLORS.TEXT_DARK }} />
             </button>
 
             {/* Text Input Area */}
@@ -268,27 +195,27 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
                 disabled={isDisabled}
                 rows={1}
                 style={{
-                  minHeight: "20px",
-                  maxHeight: "120px",
-                  color: "#ffffff !important",
+                  minHeight: `${TIMING.MIN_TEXTAREA_HEIGHT}px`,
+                  maxHeight: `${TIMING.MAX_TEXTAREA_HEIGHT}px`,
+                  color: `${COLORS.TEXT_LIGHT} !important`,
                 }}
               />
             </div>
 
             {/* Send Button */}
             <button
-              className="px-6 py-2 rounded-2xl font-medium hover:opacity-90 transition-opacity flex items-center gap-2 group flex-shrink-0"
+              className="px-4 py-1.5 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0"
               style={{
-                background: "linear-gradient(135deg, #9333ea 0%, #ec4899 100%)",
-                color: "#2c3e50",
+                background: BUTTON_GRADIENTS.PRIMARY,
+                color: COLORS.TEXT_DARK,
               }}
               onClick={handleSend}
               disabled={isDisabled || !value.trim()}
               title="メッセージを送信">
-              <span style={{ color: "#2c3e50" }}>送信</span>
+              <span style={{ color: COLORS.TEXT_DARK }}>送信</span>
               <Send
-                className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-                style={{ color: "#2c3e50" }}
+                className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform"
+                style={{ color: COLORS.TEXT_DARK }}
               />
             </button>
           </div>

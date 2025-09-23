@@ -23,7 +23,7 @@ export function PanelControls({
     setSelectedPanel,
     selectedPanelId,
     setModelForPanel,
-  } = useAppStore() as any;
+  } = useAppStore();
 
   const panelOptions = [
     { count: 1, icon: "1", label: "シングル" },
@@ -99,7 +99,7 @@ export function PanelControls({
                     key={m.id}
                     className={cn(
                       "w-full text-left px-2 py-1 rounded border hover:bg-muted/50 text-sm",
-                      panels.find((p: any) => p.id === selectedPanelId)?.modelId ===
+                      panels.find(p => p.id === selectedPanelId)?.modelId ===
                         m.id && "border-primary"
                     )}
                     onClick={() =>

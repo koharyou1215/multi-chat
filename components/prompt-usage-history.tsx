@@ -8,17 +8,20 @@ import { cn } from "@/lib/utils";
 import { Clock, ChevronRight, FileText, Target } from "lucide-react";
 
 export function PromptUsageHistory() {
-  const { promptHistory, customPrompts, panels } = useAppStore() as any;
+  const { promptHistory, customPrompts, panels } = useAppStore();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   // Group history by prompt
-  const groupedHistory = promptHistory.reduce((acc: any, item: any) => {
-    if (!acc[item.promptId]) {
-      acc[item.promptId] = [];
-    }
-    acc[item.promptId].push(item);
-    return acc;
-  }, {});
+  const groupedHistory = promptHistory.reduce<Record<string, typeof promptHistory>>(
+    (acc, item) => {
+      if (!acc[item.promptId]) {
+        acc[item.promptId] = [];
+      }
+      acc[item.promptId].push(item);
+      return acc;
+    },
+    {}
+  );
 
   // Sort by most recent usage
   const sortedPromptIds = Object.keys(groupedHistory).sort(
@@ -37,7 +40,7 @@ export function PromptUsageHistory() {
       {sortedPromptIds.length > 0 ? (
         <div className="space-y-2">
           {sortedPromptIds.slice(0, 10).map((promptId) => {
-            const prompt = customPrompts.find((p: any) => p.id === promptId);
+            const prompt = customPrompts.find(p => p.id === promptId);
             const usages = groupedHistory[promptId];
             const isExpanded = expandedItem === promptId;
 
@@ -83,7 +86,7 @@ export function PromptUsageHistory() {
                 {isExpanded && (
                   <div className="px-3 pb-3">
                     <div className="ml-7 space-y-2 border-l-2 border-muted pl-4">
-                      {usages.slice(0, 5).map((usage: any, index: number) => (
+                      {usages.slice(0, 5).map((usage, index) => (
                         <div key={usage.id} className="text-xs">
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Target className="w-3 h-3" />
@@ -97,7 +100,7 @@ export function PromptUsageHistory() {
 
                           <div className="mt-1 flex flex-wrap gap-1">
                             {usage.panelIds.map((panelId: string) => {
-                              const panel = panels.find((p: any) => p.id === panelId);
+                              const panel = panels.find(p => p.id === panelId);
                               return (
                                 <span
                                   key={panelId}

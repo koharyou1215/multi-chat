@@ -25,7 +25,7 @@ export function PromptLibrary({ open, onClose }: PromptLibraryProps) {
     selectedPanelId,
     multiSendIds,
     addPromptHistory,
-  } = useAppStore() as any;
+  } = useAppStore();
   const [editingPrompt, setEditingPrompt] = useState<CustomPrompt | null>(null);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedPanel, setSelectedPanel] = useState<string | null>(null);
@@ -33,11 +33,11 @@ export function PromptLibrary({ open, onClose }: PromptLibraryProps) {
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
+        <Dialog.Overlay className="fixed inset-0 bg-black/90 z-50 backdrop-blur-sm" />
         <Dialog.Content
           className={cn(
             "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
-            "bg-card border rounded-lg shadow-lg w-full max-w-4xl h-[80vh] z-50",
+            "bg-gray-900/95 border border-purple-600/40 rounded-lg shadow-2xl w-full max-w-4xl h-[80vh] z-60",
             "flex flex-col"
           )}>
           {/* Header */}
@@ -67,7 +67,7 @@ export function PromptLibrary({ open, onClose }: PromptLibraryProps) {
               </div>
 
               <div className="space-y-2">
-                {customPrompts.map((prompt: any) => (
+                {customPrompts.map((prompt) => (
                   <div
                     key={prompt.id}
                     className={cn(
@@ -170,22 +170,20 @@ export function PromptLibrary({ open, onClose }: PromptLibraryProps) {
                   const activePanelsArr = panels.slice(0, activePanels);
                   const targets =
                     multiSendIds.length > 0
-                      ? activePanelsArr.filter((p: any) =>
+                      ? activePanelsArr.filter((p) =>
                           multiSendIds.includes(p.id)
                         )
                       : selectedPanelId
-                      ? activePanelsArr.filter(
-                          (p: any) => p.id === selectedPanelId
-                        )
+                      ? activePanelsArr.filter((p) => p.id === selectedPanelId)
                       : activePanelsArr;
-                  targets.forEach((p: any) =>
+                  targets.forEach((p) =>
                     applyPromptToPanel(p.id, editingPrompt.id)
                   );
                   addPromptHistory({
                     id: generateId(),
                     promptId: editingPrompt.id,
                     title: editingPrompt.title,
-                    panelIds: targets.map((t: any) => t.id),
+                    panelIds: targets.map((t) => t.id),
                     appliedAt: new Date(),
                   });
                   onClose();

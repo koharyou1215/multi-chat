@@ -57,7 +57,7 @@ export function ChatHub({ className }: ChatHubProps) {
     }
 
     if (targetPanelIds.length === 0) {
-      console.warn('No panels selected for sending message')
+      // No panels selected for sending message
       return
     }
 

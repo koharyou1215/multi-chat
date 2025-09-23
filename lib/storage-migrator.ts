@@ -32,7 +32,7 @@ export function migrateStorageData() {
 
         if (needsUpdate) {
           data.state.settings.defaultModels = validatedModels;
-          console.log('Migrated default models:', validatedModels);
+          // Migrated default models: ${JSON.stringify(validatedModels)}
         }
       }
 
@@ -47,7 +47,7 @@ export function migrateStorageData() {
             if (validatedModelId !== originalModelId) {
               panel.modelId = validatedModelId;
               needsUpdate = true;
-              console.log(`Migrated panel ${panel.id} model from ${originalModelId} to ${validatedModelId}`);
+              // Migrated panel ${panel.id} model from ${originalModelId} to ${validatedModelId}
             }
           }
         }
@@ -56,11 +56,11 @@ export function migrateStorageData() {
       // Save back to localStorage if changes were made
       if (needsUpdate) {
         localStorage.setItem(storageKey, JSON.stringify(data));
-        console.log('Storage migration completed');
+        // Storage migration completed
       }
     }
   } catch (error) {
-    console.error('Failed to migrate storage data:', error);
+    // Failed to migrate storage data: ${error}
     // Don't fail silently, but also don't break the app
   }
 }
