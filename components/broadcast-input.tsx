@@ -1,13 +1,14 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent, useCallback, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Send, Paperclip, X, Clipboard } from "lucide-react";
+import { Send, Paperclip, X, Clipboard, BookOpen, Sparkles, Edit2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/use-app-store";
 import { useOpenRouter } from "@/hooks/use-openrouter";
 import { TIMING, BUTTON_GRADIENTS, COLORS, SIZES, ANIMATIONS, SHADOWS } from "@/lib/constants";
 import { generateId } from "@/lib/utils";
+import { PromptOptimizer } from "@/lib/prompt-optimizer";
 import type { Attachment } from "@/types";
 
 interface BroadcastInputProps {
@@ -15,20 +16,60 @@ interface BroadcastInputProps {
 }
 
 export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
-  const { panels, activePanels, selectedPanelId, multiSendIds } =
+  const { panels, activePanels, selectedPanelId, multiSendIds, customPrompts = [], applyPromptToPanel, openRouterApiKey, resetPrompts, deleteCustomPrompt, updateCustomPrompt } =
     useAppStore();
   const { sendMessage, isConfigured } = useOpenRouter();
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [showPromptMenu, setShowPromptMenu] = useState(false);
+  const [activePrompt, setActivePrompt] = useState<any>(null);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const promptMenuRef = useRef<HTMLDivElement>(null);
 
   const visiblePanels = panels.slice(0, activePanels);
   const isAnyLoading = visiblePanels.some((p) => p.isLoading);
-  const isDisabled = isAnyLoading || !isConfigured;
+  // 一時的にAPIキーチェックを緩める（開発用）
+  const isDisabled = isAnyLoading; // || !isConfigured を削除
 
-  // DOM操作を削除し、CSSで制御するようにリファクタリング完了
-  // スタイルは app/broadcast-styles.css で管理
+  // Reset prompts if empty (ensure default prompts are available)
+  useEffect(() => {
+    console.log("📚 Current prompts count:", customPrompts?.length || 0);
+    if (!customPrompts || customPrompts.length === 0) {
+      console.log("📚 No prompts found, resetting to default prompts");
+      if (resetPrompts) {
+        resetPrompts();
+      }
+    }
+  }, [customPrompts?.length]);
+
+  // Click outside to close prompt menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (promptMenuRef.current && !promptMenuRef.current.contains(event.target as Node)) {
+        setShowPromptMenu(false);
+      }
+    }
+
+    if (showPromptMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPromptMenu]);
+
+  // Debug: Check why input is disabled
+  console.log("🔍 BroadcastInput state:", {
+    isConfigured,
+    isAnyLoading,
+    isDisabled,
+    visiblePanelsCount: visiblePanels.length,
+    hasLoadingPanels: visiblePanels.filter(p => p.isLoading).length,
+    note: "APIキーチェックを一時的に無効化"
+  });
 
   const adjustTextareaHeight = () => {
     if (textareaRef.current) {
@@ -47,7 +88,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
 
   const handleSend = async () => {
     const trimmed = value.trim();
-    if (!trimmed || !isConfigured) return;
+    if (!trimmed) return;  // isConfigured チェックを削除
 
     setValue("");
 
@@ -58,16 +99,36 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
         : visiblePanels;
 
     // 並列送信：全てのパネルに同時にメッセージを送信
-    const sendPromises = targets.map(panel =>
-      sendMessage(
+    const sendPromises = targets.map(panel => {
+      // Get custom prompt content
+      const promptContent = panel.customPrompt?.content || "";
+
+      console.log("🎯 Sending with prompt:", {
+        panelId: panel.id,
+        hasPrompt: !!panel.customPrompt,
+        promptTitle: panel.customPrompt?.title,
+        promptContent: promptContent ? promptContent.substring(0, 50) + "..." : "none"
+      });
+
+      // Handle {input} variable replacement if present
+      let finalMessage = trimmed;
+      let systemPrompt = promptContent;
+
+      if (promptContent && promptContent.includes('{input}')) {
+        // Replace {input} with user message and don't use as system prompt
+        finalMessage = promptContent.replace(/\{input\}/g, trimmed);
+        systemPrompt = undefined; // Don't use as system prompt if it has {input}
+      }
+
+      return sendMessage(
         panel.id,
         panel.modelId,
-        trimmed,
+        finalMessage,
         panel.messages || [],
-        panel.customPrompt?.content,
+        systemPrompt, // Pass the prompt as system prompt
         attachments
-      )
-    );
+      );
+    });
 
     // 全ての送信完了を待つ（但し、各パネルは独立して処理される）
     await Promise.allSettled(sendPromises);
@@ -77,6 +138,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
       textareaRef.current.focus();
     }
     setAttachments([]);
+    setActivePrompt(null);  // Reset active prompt after sending
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -99,14 +161,82 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     setAttachments(attachments.filter((_, i) => i !== index));
   };
 
-  // Paste function
-  const handlePaste = async () => {
+  // Handle prompt selection from library
+  const handleSelectPrompt = useCallback((prompt: any) => {
+    // Set as active prompt
+    setActivePrompt(prompt);
+
+    // Always apply to ALL visible panels
+    visiblePanels.forEach(panel => {
+      applyPromptToPanel(panel.id, prompt.id);
+    });
+
+    setShowPromptMenu(false);
+
+    // Focus the textarea
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [visiblePanels, applyPromptToPanel]);
+
+  // Handle clearing active prompt
+  const handleClearPrompt = useCallback(() => {
+    setActivePrompt(null);
+
+    // Clear from ALL visible panels
+    visiblePanels.forEach(panel => {
+      applyPromptToPanel(panel.id, '');
+    });
+  }, [visiblePanels, applyPromptToPanel]);
+
+  // Handle prompt optimization
+  const handleOptimizePrompt = async () => {
+    const trimmed = value.trim();
+    if (!trimmed || isOptimizing) return;
+
+    setIsOptimizing(true);
+
     try {
-      const text = await navigator.clipboard.readText();
-      setValue(value + text);
-      adjustTextareaHeight();
-    } catch (err) {
-      // 貼り付けに失敗: ${err}
+      // Use the OpenRouter API key for optimization
+      const optimizer = new PromptOptimizer(openRouterApiKey);
+
+      // Create a temporary prompt object for optimization
+      const tempPrompt = {
+        id: generateId(),
+        title: "Optimization Target",
+        content: trimmed,
+        tags: [],
+        isDefault: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      // Optimize with clarity mode by default
+      const result = await optimizer.optimizePrompt(tempPrompt, { mode: "clarity" });
+
+      // Update the input with optimized content
+      setValue(result.optimizedContent);
+
+      // Auto-adjust textarea height
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.style.height = "auto";
+          const scrollHeight = textareaRef.current.scrollHeight;
+          textareaRef.current.style.height = `${Math.min(scrollHeight, TIMING.MAX_TEXTAREA_HEIGHT)}px`;
+        }
+      }, 0);
+
+      console.log("✨ Prompt optimized:", {
+        original: trimmed.substring(0, 50) + "...",
+        optimized: result.optimizedContent.substring(0, 50) + "...",
+        improvements: result.improvements,
+        tokenReduction: result.tokenReduction
+      });
+    } catch (error) {
+      console.error("Optimization failed:", error);
+      // Keep original text on failure
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
@@ -121,26 +251,6 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
       ? "flex flex-col gap-4 px-6 py-5 glass-dark backdrop-blur-2xl rounded-2xl"
       : "rounded-lg border p-2 flex items-end space-x-2";
 
-  const selectClass =
-    variant === "glass"
-      ? "text-sm bg-gradient-to-r from-purple-600/30 to-pink-600/30 backdrop-blur-xl rounded-lg px-3 py-2 border border-purple-400/30 hover:border-purple-400/50 hover:from-purple-600/40 hover:to-pink-600/40 transition-all cursor-pointer focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50 text-white font-medium"
-      : "text-xs border rounded px-2 py-1 bg-background";
-
-  const attachButtonClass =
-    variant === "glass"
-      ? "h-10 w-10 flex-shrink-0 bg-purple-600/50 hover:bg-purple-600/70 border border-purple-500/50 hover:border-purple-400/70 hover:scale-105 transition-all rounded-lg text-white"
-      : "h-8 w-8 flex-shrink-0";
-
-  const sendButtonClass =
-    variant === "glass"
-      ? "h-10 w-10 flex-shrink-0 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold shadow-lg hover:shadow-xl active:scale-95 transition-all duration-200"
-      : "h-8 w-8 flex-shrink-0";
-
-  const attachmentClass =
-    variant === "glass"
-      ? "px-2 py-1 glass rounded flex items-center gap-1"
-      : "px-2 py-1 bg-muted/50 rounded";
-
   return (
     <div className={containerClass}>
       <div className="max-w-5xl mx-auto">
@@ -150,7 +260,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
             <div className="flex flex-wrap gap-2 mb-3 pb-3 border-b border-white/10">
               {attachments.map((file, index) => (
                 <div key={index} className="flex items-center gap-1">
-                  <span className={attachmentClass}>{file.name}</span>
+                  <span className="px-2 py-1 glass rounded flex items-center gap-1">{file.name}</span>
                   <button
                     onClick={() => removeAttachment(index)}
                     className="text-red-500 hover:text-red-600">
@@ -162,29 +272,155 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
           )}
 
           {/* Main Input Bar */}
-          <div className="flex items-center gap-6 w-full px-2">
-            {/* File Attachment Button */}
-            <button
-              className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center"
-              style={{
-                background: BUTTON_GRADIENTS.PRIMARY,
-                color: COLORS.TEXT_DARK,
-              }}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isDisabled}
-              title="ファイルを添付">
-              <Paperclip className="w-3.5 h-3.5" style={{ color: COLORS.TEXT_DARK }} />
-            </button>
+          <div className="flex items-start gap-2 w-full px-2">
+            {/* Button Group - Vertical (元に戻す) */}
+            <div className="flex flex-col gap-1">
+              {/* Prompt Library Button */}
+              <div className="relative" ref={promptMenuRef}>
+                <button
+                  className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
+                  style={{
+                    background: "transparent",
+                    color: "white",
+                  }}
+                  onClick={() => setShowPromptMenu(!showPromptMenu)}
+                  title="プロンプトライブラリ">
+                  <BookOpen className="w-3.5 h-3.5" style={{ color: "white" }} />
+                </button>
+
+                {/* Prompt Menu Dropdown */}
+                {showPromptMenu && (
+                  <div className="absolute left-0 bottom-full mb-2 bg-gray-900 backdrop-blur-sm border border-gray-700 rounded-lg shadow-2xl z-50"
+                    style={{ width: '400px', maxHeight: '400px', backgroundColor: 'rgba(17, 24, 39, 0.98)' }}>
+                    <div className="p-3 border-b border-gray-700 bg-gray-800/50">
+                      <div className="text-sm text-gray-300 font-semibold">プロンプトを選択</div>
+                      <div className="text-xs text-gray-500 mt-1">クリックしてプロンプトを適用</div>
+                    </div>
+                    <div className="overflow-y-auto" style={{ maxHeight: '320px' }}>
+                      <div className="space-y-1 p-2">
+                        {(() => {
+                          console.log("📋 Available prompts:", customPrompts?.length || 0);
+                          return customPrompts && customPrompts.length > 0;
+                        })() ? (
+                          customPrompts.map((prompt) => (
+                            <div
+                              key={prompt.id}
+                              className="p-3 bg-gray-800/70 hover:bg-gray-700/80 rounded-lg transition-all duration-200 border border-gray-700 hover:border-purple-500/50 hover:shadow-md group"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div
+                                  className="flex-1 cursor-pointer"
+                                  onClick={() => handleSelectPrompt(prompt)}
+                                >
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Sparkles className="w-3 h-3 text-purple-400" />
+                                    <div className="text-sm font-medium text-gray-100">{prompt.title}</div>
+                                  </div>
+                                  <div className="text-xs text-gray-400 line-clamp-2 ml-5">
+                                    {prompt.content.substring(0, 100)}...
+                                  </div>
+                                  {prompt.tags && prompt.tags.length > 0 && (
+                                    <div className="flex gap-1 mt-2 flex-wrap ml-5">
+                                      {prompt.tags.slice(0, 3).map((tag, idx) => (
+                                        <span key={idx} className="px-2 py-0.5 bg-purple-600/20 text-purple-300 text-[10px] rounded-full">
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // TODO: Open edit dialog
+                                      console.log("Edit prompt:", prompt.id);
+                                    }}
+                                    className="p-1.5 hover:bg-purple-600/20 rounded transition-colors"
+                                    title="編集"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-purple-400" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (confirm(`「${prompt.title}」を削除しますか？`)) {
+                                        deleteCustomPrompt(prompt.id);
+                                      }
+                                    }}
+                                    className="p-1.5 hover:bg-red-600/20 rounded transition-colors"
+                                    title="削除"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-8 text-center">
+                            <BookOpen className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                            <div className="text-gray-400 mb-3">
+                              <div className="font-medium mb-1">プロンプトがありません</div>
+                              <div className="text-xs text-gray-500">サイドバーのプロンプトライブラリから新規作成してください</div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                console.log("🔄 Resetting prompts to defaults");
+                                resetPrompts?.();
+                                setShowPromptMenu(false);
+                                setTimeout(() => setShowPromptMenu(true), 100);
+                              }}
+                              className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs rounded-lg transition-colors"
+                            >
+                              デフォルトプロンプトを読み込む
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* File Attachment Button */}
+              <button
+                className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
+                style={{
+                  background: "transparent",
+                  color: "white",
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                title="ファイルを添付">
+                <Paperclip className="w-3.5 h-3.5" style={{ color: "white" }} />
+              </button>
+            </div>
 
             {/* Text Input Area */}
-            <div className="flex-1 glass-dark rounded-2xl px-4 py-3 min-h-[48px] flex items-center">
+            <div className="flex-1 glass-dark rounded-2xl px-4 py-3 min-h-[48px] flex flex-col">
+              {/* Active Prompt Indicator */}
+              {activePrompt && (
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  <span className="text-xs text-purple-300 flex-1">
+                    {activePrompt.title} を使用中
+                  </span>
+                  <button
+                    onClick={handleClearPrompt}
+                    className="p-1 hover:bg-white/10 rounded transition-colors"
+                    title="プロンプトをクリア"
+                  >
+                    <X className="w-3 h-3 text-gray-400 hover:text-white" />
+                  </button>
+                </div>
+              )}
               <textarea
                 ref={textareaRef}
                 className="w-full resize-none bg-transparent border-0 outline-none text-white placeholder:text-gray-400 focus:ring-0 text-sm"
                 placeholder={
                   !isConfigured
                     ? "APIキーを設定してください"
-                    : "メッセージを入力... (Cmd+Enterで送信)"
+                    : "メッセージを入力... (Enterで送信)"
                 }
                 value={value}
                 onChange={(e) => {
@@ -192,7 +428,6 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
                   adjustTextareaHeight();
                 }}
                 onKeyDown={handleKeyDown}
-                disabled={isDisabled}
                 rows={1}
                 style={{
                   minHeight: `${TIMING.MIN_TEXTAREA_HEIGHT}px`,
@@ -202,22 +437,42 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
               />
             </div>
 
-            {/* Send Button */}
-            <button
-              className="px-4 py-1.5 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0"
-              style={{
-                background: BUTTON_GRADIENTS.PRIMARY,
-                color: COLORS.TEXT_DARK,
-              }}
-              onClick={handleSend}
-              disabled={isDisabled || !value.trim()}
-              title="メッセージを送信">
-              <span style={{ color: COLORS.TEXT_DARK }}>送信</span>
-              <Send
-                className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform"
-                style={{ color: COLORS.TEXT_DARK }}
-              />
-            </button>
+            {/* Button Group - Send and Optimize */}
+            <div className="flex flex-col gap-2">
+              {/* Send Button */}
+              <button
+                className="px-4 py-1.5 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0 border border-white/50"
+                style={{
+                  background: "transparent",
+                  color: "white",
+                }}
+                onClick={handleSend}
+                disabled={!value.trim()}
+                title="メッセージを送信">
+                <span style={{ color: "white" }}>送信</span>
+                <Send
+                  className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform"
+                  style={{ color: "white" }}
+                />
+              </button>
+
+              {/* Optimize Button */}
+              <button
+                className="px-4 py-1.5 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0 border border-white/50 disabled:opacity-50"
+                style={{
+                  background: "transparent",
+                  color: "white",
+                }}
+                onClick={handleOptimizePrompt}
+                disabled={!value.trim() || isOptimizing}
+                title="プロンプトを最適化">
+                <span style={{ color: "white" }}>{isOptimizing ? "最適化中..." : "最適化"}</span>
+                <Sparkles
+                  className={`w-3.5 h-3.5 ${isOptimizing ? "animate-pulse" : ""}`}
+                  style={{ color: "white" }}
+                />
+              </button>
+            </div>
           </div>
 
           <input

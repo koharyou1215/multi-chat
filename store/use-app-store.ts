@@ -38,6 +38,7 @@ export interface AppStore {
   addMessage: (panelId: string, message: ChatMessage) => void;
   setModelForPanel: (panelId: string, modelId: string) => void;
   clearPanelMessages: (panelId: string) => void;
+  regenerateLastMessage: (panelId: string) => void;
   setSelectedPanel: (panelId: string) => void;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
@@ -50,6 +51,7 @@ export interface AppStore {
   updateCustomPrompt: (id: string, updates: Partial<CustomPrompt>) => void;
   deleteCustomPrompt: (id: string) => void;
   applyPromptToPanel: (panelId: string, promptId: string) => void;
+  resetPrompts: () => void;
 
   // Command palette features
   setCommandPaletteOpen: (open: boolean) => void;
@@ -81,7 +83,11 @@ export const useAppStore = () => {
     activePanels: chatStore.activePanels,
     customPrompts: chatStore.customPrompts,
     openRouterApiKey:
-      chatStore.openRouterApiKey || chatStore.settings.apiKeys.openRouter || "",
+      chatStore.openRouterApiKey ||
+      chatStore.settings.apiKeys.openRouter ||
+      chatStore.settings.apiKeys.openrouter ||
+      "",
+    apiKeys: chatStore.settings.apiKeys,
     selectedPanelId: chatStore.selectedPanelId,
     sidebarOpen: chatStore.sidebarOpen,
     multiSendIds: chatStore.multiSendIds,
@@ -99,6 +105,7 @@ export const useAppStore = () => {
     addMessage: chatStore.addMessage,
     setModelForPanel: chatStore.setModelForPanel,
     clearPanelMessages: chatStore.clearPanelMessages,
+    regenerateLastMessage: chatStore.regenerateLastMessage,
     setSelectedPanel: chatStore.setSelectedPanel,
     toggleSidebar: chatStore.toggleSidebar,
     setSidebarOpen: chatStore.setSidebarOpen,
@@ -111,6 +118,7 @@ export const useAppStore = () => {
     updateCustomPrompt: chatStore.updateCustomPrompt,
     deleteCustomPrompt: chatStore.deleteCustomPrompt,
     applyPromptToPanel: chatStore.applyPromptToPanel,
+    resetPrompts: chatStore.resetPrompts,
 
     // Command palette
     setCommandPaletteOpen: chatStore.setCommandPaletteOpen,
