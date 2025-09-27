@@ -206,6 +206,10 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     try {
       // Use PromptOptimizer to produce a template that preserves {input}
       const panelModel = panels.find((p) => p.id === selectedPanelId)?.modelId || panels[0]?.modelId;
+      console.log('🔍 最適化デバッグ:', {
+        apiKey: openRouterApiKey ? 'あり' : 'なし',
+        model: panelModel || 'なし'
+      });
       const optimizer = new PromptOptimizer(openRouterApiKey, panelModel);
 
       // Build a simple template around {input} for optimization guidance

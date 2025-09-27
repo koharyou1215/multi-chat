@@ -95,6 +95,15 @@ export class OpenRouterClient {
     };
 
     try {
+      // Debug: APIキー情報をログ出力
+      console.log("🔑 API Key Debug:", {
+        keyLength: this.apiKey.length,
+        keyPrefix: this.apiKey.substring(0, 10) + "...",
+        keyValid: this.apiKey.startsWith("sk-or-v1-"),
+        requestUrl: `${this.baseUrl}/chat/completions`,
+        model: validatedModel,
+      });
+
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: "POST",
         headers: {
@@ -106,6 +115,13 @@ export class OpenRouterClient {
         body: JSON.stringify(requestBody),
       });
 
+      // Debug: レスポンス情報をログ出力
+      console.log("🔑 API Response Debug:", {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries()),
+      });
+
       if (!response.ok) {
         let errorMessage = `OpenRouter API error (${response.status})`;
 
@@ -115,9 +131,16 @@ export class OpenRouterClient {
 
           // Handle specific error cases
           if (response.status === 429) {
-            throw new Error("API quota exceeded. Please wait and try again later.");
-          } else if (response.status === 400 && errorData.includes("not a valid model")) {
-            throw new Error(`Invalid model ID: ${validatedModel}. Please check the model configuration.`);
+            throw new Error(
+              "API quota exceeded. Please wait and try again later."
+            );
+          } else if (
+            response.status === 400 &&
+            errorData.includes("not a valid model")
+          ) {
+            throw new Error(
+              `Invalid model ID: ${validatedModel}. Please check the model configuration.`
+            );
           }
         } catch (parseError) {
           // Could not parse error response: ${parseError}
@@ -130,7 +153,9 @@ export class OpenRouterClient {
       try {
         data = await response.json();
       } catch (parseError) {
-        throw new Error("Invalid JSON response from API. The response may be corrupted.");
+        throw new Error(
+          "Invalid JSON response from API. The response may be corrupted."
+        );
       }
 
       if (!data.choices || data.choices.length === 0) {

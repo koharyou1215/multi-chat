@@ -18,7 +18,6 @@ export function validateModelId(modelId: string): string {
 
   // Handle common invalid model IDs
   const modelMappings: Record<string, string> = {
-    'google/gemini-1.5-flash-8b': 'google/gemini-2.5-flash',
     'google/gemini-1.5-flash': 'google/gemini-2.5-flash',
     'google/gemini-1.5-pro': 'google/gemini-2.5-pro',
     'google/gemini-flash': 'google/gemini-2.5-flash',

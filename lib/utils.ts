@@ -65,7 +65,8 @@ export function isImageFile(fileName: string): boolean {
 }
 
 export function validateApiKey(key: string): boolean {
-  return key.length > 0 && key.startsWith("sk-");
+  // OpenRouter API keys start with "sk-or-"
+  return key.length > 0 && (key.startsWith("sk-or-") || key.startsWith("sk-"));
 }
 
 export function debounce<T extends (...args: any[]) => any>(
