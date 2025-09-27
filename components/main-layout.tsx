@@ -26,6 +26,7 @@ export const MainLayout = memo(function MainLayout() {
   const [showRightPanel, setShowRightPanel] = useState(false);
   const [selectedPanels, setSelectedPanels] = useState<Set<string>>(new Set());
   const [isInitialized, setIsInitialized] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
 
   // パネル選択を切り替える関数
   const togglePanelSelection = useCallback((panelId: string) => {
@@ -42,6 +43,18 @@ export const MainLayout = memo(function MainLayout() {
       console.log("📋 New selection:", Array.from(newSet));
       return newSet;
     });
+  }, []);
+
+  // ウィンドウサイズ変更を監視
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('resize', handleResize);
+      return () => window.removeEventListener('resize', handleResize);
+    }
   }, []);
 
   // パネル初期化とデバッグログ
@@ -339,11 +352,11 @@ export const MainLayout = memo(function MainLayout() {
                   activePanels === 1
                     ? "1fr"
                     : activePanels === 2
-                    ? window.innerWidth >= 768 ? "repeat(2, 1fr)" : "1fr"
+                    ? windowWidth >= 768 ? "repeat(2, 1fr)" : "1fr"
                     : activePanels === 3
-                    ? window.innerWidth >= 1024 ? "repeat(3, 1fr)" : "1fr"
-                    : window.innerWidth >= 768 ? "repeat(2, 1fr)" : "1fr",
-                gridTemplateRows: activePanels === 4 && window.innerWidth >= 768 ? "repeat(2, 1fr)" : activePanels > 1 && window.innerWidth < 768 ? `repeat(${activePanels}, auto)` : "1fr",
+                    ? windowWidth >= 1024 ? "repeat(3, 1fr)" : "1fr"
+                    : windowWidth >= 768 ? "repeat(2, 1fr)" : "1fr",
+                gridTemplateRows: activePanels === 4 && windowWidth >= 768 ? "repeat(2, 1fr)" : activePanels > 1 && windowWidth < 768 ? `repeat(${activePanels}, auto)` : "1fr",
               }}>
               {panels && panels.length > 0 ? (
                 panels.slice(0, activePanels).map((panel) => {
