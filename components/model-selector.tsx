@@ -15,7 +15,7 @@ interface ModelSelectorProps {
   value?: string; // For controlled component usage
   onChange?: (modelId: string) => void; // For controlled component usage
   className?: string;
-  variant?: "radix" | "custom" | "simple"; // Choose implementation style
+  variant?: "radix" | "custom" | "simple" | "glass"; // Choose implementation style
 }
 
 export function ModelSelector({
@@ -46,7 +46,7 @@ export function ModelSelector({
 
   // Close dropdown on outside click (for custom variant)
   useEffect(() => {
-    if (variant !== "custom") return;
+    if (variant !== "custom" && variant !== "glass") return;
 
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -64,6 +64,86 @@ export function ModelSelector({
     }
   }, [open, variant]);
 
+  // Glass variant - blends naturally with header
+  if (variant === "glass") {
+    return (
+      <Select.Root
+        open={open}
+        onOpenChange={setOpen}
+        value={modelId}
+        onValueChange={handleChange}>
+        <Select.Trigger
+          className={cn(
+            "relative inline-flex items-center gap-2 px-3 py-1.5 text-sm",
+            "rounded-lg bg-white/10",
+            "backdrop-blur-sm hover:bg-white/15",
+            "transition-all duration-200",
+            "focus:outline-none focus:ring-1 focus:ring-white/30",
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            "text-white/90 font-medium",
+            "border border-white/20",
+            className
+          )}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+          }}>
+          <Bot className="w-3.5 h-3.5 text-white/70" />
+          <span className="font-medium">
+            {currentModel?.name || "Select Model"}
+          </span>
+          <Select.Icon>
+            <ChevronDown className="w-3.5 h-3.5 text-white/70" />
+          </Select.Icon>
+        </Select.Trigger>
+
+        <Select.Portal>
+          <Select.Content
+            position="popper"
+            sideOffset={8}
+            align="start"
+            style={{ zIndex: 10000 }}
+            className={cn(
+              "min-w-[200px] max-h-[400px] overflow-auto",
+              "rounded-xl bg-gray-900/95",
+              "backdrop-blur-xl border border-white/20 shadow-2xl",
+              "animate-in fade-in-0 zoom-in-95"
+            )}>
+            <Select.Viewport className="p-2">
+              {Object.entries(modelGroups).map(([group, models]) => (
+                <div key={group} className="mb-2">
+                  <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    {group}
+                  </div>
+                  {models.map((model) => (
+                    <Select.Item
+                      key={model.id}
+                      value={model.id}
+                      className={cn(
+                        "relative flex items-center justify-between px-3 py-2 text-sm",
+                        "rounded-lg outline-none cursor-pointer",
+                        "hover:bg-white/10 hover:text-white",
+                        "focus:bg-white/10 focus:text-white",
+                        "data-[state=checked]:bg-white/15 data-[state=checked]:text-white",
+                        "transition-all duration-150 text-gray-300",
+                        "data-[highlighted]:bg-white/10 data-[highlighted]:text-white"
+                      )}>
+                      <Select.ItemText>{model.name}</Select.ItemText>
+                      {model.contextWindow && (
+                        <span className="text-xs text-gray-500 ml-2">
+                          {Math.floor(model.contextWindow / 1000)}K
+                        </span>
+                      )}
+                    </Select.Item>
+                  ))}
+                </div>
+              ))}
+            </Select.Viewport>
+          </Select.Content>
+        </Select.Portal>
+      </Select.Root>
+    );
+  }
+
   // Simple implementation (clean dropdown)
   if (variant === "simple") {
     return (
@@ -75,10 +155,10 @@ export function ModelSelector({
         <Select.Trigger
           className={cn(
             "relative inline-flex items-center gap-2 px-3 py-1.5 text-xs",
-            "rounded-lg bg-white/10 backdrop-blur-sm",
-            "hover:bg-white/20",
+            "rounded-lg bg-gray-800/95 border border-white/30",
+            "backdrop-blur-md hover:bg-gray-700/95",
             "transition-all duration-200",
-            "focus:outline-none focus:ring-2 focus:ring-white/30",
+            "focus:outline-none focus:ring-2 focus:ring-white/40",
             "disabled:cursor-not-allowed disabled:opacity-50",
             "text-white font-medium",
             className
@@ -101,8 +181,8 @@ export function ModelSelector({
             align="center"
             className={cn(
               "z-50 min-w-[150px] overflow-hidden",
-              "rounded-lg bg-gray-900",
-              "border border-white/20 shadow-2xl",
+              "rounded-lg bg-gray-900/98",
+              "backdrop-blur-xl border border-white/20 shadow-2xl",
               "animate-in fade-in-0 zoom-in-95"
             )}>
             <Select.Viewport className="p-1">
@@ -146,7 +226,7 @@ export function ModelSelector({
         <Select.Trigger
           className={cn(
             "relative inline-flex items-center gap-1.5 px-3 py-1.5 text-xs",
-            "rounded-full bg-gradient-to-r from-purple-500/40 to-pink-500/40",
+            "rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20",
             "border border-purple-400/50 backdrop-blur-md",
             "hover:from-purple-500/30 hover:to-pink-500/30",
             "transition-all duration-200",
@@ -170,10 +250,11 @@ export function ModelSelector({
             position="popper"
             sideOffset={5}
             align="center"
+            style={{ zIndex: 9999 }}
             className={cn(
-              "z-50 min-w-[180px] overflow-hidden",
-              "rounded-xl bg-gray-900",
-              "border border-white/10 shadow-2xl",
+              "min-w-[180px] overflow-hidden",
+              "rounded-xl bg-gray-900/98",
+              "backdrop-blur-xl border border-white/10 shadow-2xl",
               "animate-in fade-in-0 zoom-in-95"
             )}>
             <Select.Viewport className="p-1">
@@ -192,7 +273,7 @@ export function ModelSelector({
                         "hover:bg-purple-500/20 hover:text-purple-200",
                         "focus:bg-purple-500/20 focus:text-purple-200",
                         "data-[state=checked]:bg-purple-500/30 data-[state=checked]:text-purple-100",
-                        "transition-colors"
+                        "transition-colors text-white/80"
                       )}>
                       <Select.ItemText>{model.name}</Select.ItemText>
                       {model.description && (

@@ -1,40 +1,82 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import * as Dialog from '@radix-ui/react-dialog'
-import { useAppStore } from '@/store/use-app-store'
-import { Button } from './ui/button'
-import { X, Key, RefreshCw } from 'lucide-react'
-import { validateApiKey, cn } from '@/lib/utils'
+import { useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { useAppStore } from "@/store/use-app-store";
+import { Button } from "./ui/button";
+import { X, Key, RefreshCw } from "lucide-react";
+import { validateApiKey as validateUtilsApiKey, cn } from "@/lib/utils";
 
 interface SettingsProps {
-  open: boolean
-  onClose: () => void
+  open: boolean;
+  onClose: () => void;
 }
 
 export function Settings({ open, onClose }: SettingsProps) {
-  const { openRouterApiKey, setApiKey, resetStore } = useAppStore()
-  const [inputKey, setInputKey] = useState(openRouterApiKey)
-  const [showConfirmReset, setShowConfirmReset] = useState(false)
-  
-  const handleSaveApiKey = () => {
-    setApiKey(inputKey)
-  }
-  
+  const { openRouterApiKey, setApiKey, resetStore } = useAppStore();
+  const [inputKey, setInputKey] = useState(openRouterApiKey);
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
+  const [isValidating, setIsValidating] = useState(false);
+
+  const handleTestApiKey = async () => {
+    if (!inputKey.trim()) {
+      alert("APIキーを入力してください");
+      return;
+    }
+
+    setIsValidating(true);
+    try {
+      const { OpenRouterClient } = await import("@/lib/api/openrouter");
+      const client = new OpenRouterClient(inputKey);
+      const isValid = await client.validateApiKey();
+
+      if (isValid) {
+        alert("APIキーの検証が成功しました");
+      } else {
+        alert("APIキーの検証に失敗しました。キーを確認してください。");
+      }
+    } catch (error) {
+      alert("APIキーの検証でエラーが発生しました。");
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
+    // まず古いクライアントキャッシュをクリア
+    try {
+      const { OpenRouterClient } = await import("@/lib/api/openrouter");
+      const client = new OpenRouterClient(inputKey);
+      const isValid = await client.validateApiKey();
+
+      if (isValid) {
+        setApiKey(inputKey);
+        alert("APIキーが正常に設定されました");
+        // ページをリロードして新しいAPIキーを確実に使用する
+        window.location.reload();
+      } else {
+        alert("APIキーの検証に失敗しました。キーを確認してください。");
+      }
+    } catch (error) {
+      alert("APIキーの検証でエラーが発生しました。");
+    }
+  };
+
   const handleReset = () => {
-    resetStore()
-    setShowConfirmReset(false)
-    onClose()
-  }
-  
+    resetStore();
+    setShowConfirmReset(false);
+    onClose();
+  };
+
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-50" />
-        <Dialog.Content className={cn(
-          "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
-          "bg-card border rounded-lg shadow-lg w-full max-w-md z-50"
-        )}>
+        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[100]" />
+        <Dialog.Content
+          className={cn(
+            "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
+            "bg-card border rounded-lg shadow-lg w-full max-w-md z-[110]"
+          )}>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <Dialog.Title className="text-lg font-semibold text-foreground">
@@ -46,7 +88,7 @@ export function Settings({ open, onClose }: SettingsProps) {
               </Button>
             </Dialog.Close>
           </div>
-          
+
           {/* Content */}
           <div className="p-4 space-y-6">
             {/* API Key */}
@@ -66,23 +108,39 @@ export function Settings({ open, onClose }: SettingsProps) {
                     "focus:outline-none focus:ring-2 focus:ring-ring"
                   )}
                 />
-                <Button
-                  size="sm"
-                  onClick={handleSaveApiKey}
-                  disabled={!inputKey.trim()}
-                  className="w-full"
-                >
-                  APIキーを更新
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleTestApiKey}
+                    disabled={!inputKey.trim() || isValidating}
+                    className="flex-1">
+                    {isValidating ? "検証中..." : "テスト"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleSaveApiKey}
+                    disabled={!inputKey.trim()}
+                    className="flex-1">
+                    設定
+                  </Button>
+                </div>
                 <div className="text-xs text-muted-foreground">
-                  現在の状態: 
-                  <span className={validateApiKey(openRouterApiKey) ? 'text-green-500' : 'text-destructive'}>
-                    {validateApiKey(openRouterApiKey) ? '設定済み' : '未設定'}
+                  現在の状態:
+                  <span
+                    className={
+                      validateUtilsApiKey(openRouterApiKey)
+                        ? "text-green-500"
+                        : "text-destructive"
+                    }>
+                    {validateUtilsApiKey(openRouterApiKey)
+                      ? "設定済み"
+                      : "未設定"}
                   </span>
                 </div>
               </div>
             </div>
-            
+
             {/* Data Management */}
             <div>
               <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
@@ -100,8 +158,7 @@ export function Settings({ open, onClose }: SettingsProps) {
                       variant="destructive"
                       size="sm"
                       onClick={() => setShowConfirmReset(true)}
-                      className="w-full"
-                    >
+                      className="w-full">
                       アプリデータをリセット
                     </Button>
                   ) : (
@@ -114,16 +171,14 @@ export function Settings({ open, onClose }: SettingsProps) {
                           variant="outline"
                           size="sm"
                           onClick={() => setShowConfirmReset(false)}
-                          className="flex-1"
-                        >
+                          className="flex-1">
                           キャンセル
                         </Button>
                         <Button
                           variant="destructive"
                           size="sm"
                           onClick={handleReset}
-                          className="flex-1"
-                        >
+                          className="flex-1">
                           リセット
                         </Button>
                       </div>
@@ -136,5 +191,5 @@ export function Settings({ open, onClose }: SettingsProps) {
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
-  )
+  );
 }

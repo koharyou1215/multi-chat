@@ -7,6 +7,7 @@ import { Copy, User, Bot, Edit2, RefreshCw, Star } from "lucide-react";
 import { useAppStore } from "@/store/use-app-store";
 import { Button } from "./ui/button";
 import { useState, useEffect } from "react";
+import { MessageRenderer } from "./message-renderer";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -81,15 +82,9 @@ export function ChatMessage({
               />
             ) : (
               <div className="relative">
-                {/* Speech bubble with proper design */}
-                <div
-                  className="rounded-2xl rounded-br-none px-4 py-3 text-white text-sm"
-                  style={{
-                    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-                    boxShadow: "0 4px 12px rgba(102, 126, 234, 0.3)",
-                    maxWidth: "320px"
-                  }}>
-                  {message.content}
+                {/* Speech bubble with CSS class */}
+                <div className="speech-bubble-user">
+                  <MessageRenderer content={message.content} isUser={true} />
                 </div>
                 {/* User message icons - no white backgrounds */}
                 <div className="absolute -bottom-8 right-0 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-200">
@@ -144,15 +139,11 @@ export function ChatMessage({
                 </div>
               </div>
             ) : (
-              <div
-                className="rounded-2xl rounded-bl-none px-4 py-3 text-sm text-white"
-                style={{
-                  background: "rgba(30, 30, 40, 0.9)",
-                  border: "1px solid rgba(255, 255, 255, 0.1)",
-                  boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-                  maxWidth: "320px"
-                }}>
-                {message.content}
+              <div className="relative">
+                {/* Speech bubble with CSS class */}
+                <div className="speech-bubble-ai">
+                  <MessageRenderer content={message.content} isUser={false} />
+                </div>
               </div>
             )}
             {/* AI message actions - no white backgrounds */}

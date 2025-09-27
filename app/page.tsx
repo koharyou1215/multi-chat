@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { MainLayout } from '@/components/main-layout'
 import { migrateStorageData } from '@/lib/storage-migrator'
 import { useState } from 'react'
+// import { StorageDebug } from '@/components/storage-debug' // Removed to fix UI overlap
 
 export default function Home() {
   const [cssLoaded, setCssLoaded] = useState<boolean | null>(null)
@@ -32,6 +33,8 @@ export default function Home() {
   return (
     <>
       <MainLayout />
+      {/* StorageDebug removed - was causing UI overlap issue */}
+      {/* <StorageDebug /> */}
       {/* Small visible diagnostic for users: shows when global CSS appears missing */}
       {cssLoaded === false && (
         <div style={{ position: 'fixed', bottom: 12, right: 12, zIndex: 9999 }}>

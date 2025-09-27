@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/use-app-store";
 import type { ChatMessage } from "@/types";
+import { Sparkles, X } from "lucide-react";
 
 interface RightPanelProps {
   isOpen: boolean;
@@ -12,13 +13,15 @@ interface RightPanelProps {
 }
 
 export function RightPanel({ isOpen, onClose }: RightPanelProps) {
-  const [activeTab, setActiveTab] = useState<"history" | "favorites">(
+  const [activeTab, setActiveTab] = useState<"history" | "favorites" | "prompts">(
     "history"
   );
 
   // ストアから実際のデータを取得
   const store = useAppStore();
   const chatHistory = store.getChatHistories();
+  const panels = store.panels || [];
+  const applyPromptToPanel = store.applyPromptToPanel;
 
   // お気に入りはストアで管理する（永続化済み）
   const favorites = store.favorites || [];
@@ -77,7 +80,7 @@ export function RightPanel({ isOpen, onClose }: RightPanelProps) {
   };
 
   const deleteFavorite = (id: string) => {
-    setFavorites((prev) => prev.filter((fav) => fav.id !== id));
+    store.removeFavorite(id);
   };
 
   if (!isOpen) return null;
@@ -165,6 +168,16 @@ export function RightPanel({ isOpen, onClose }: RightPanelProps) {
                 : "text-gray-400 hover:text-white hover:bg-white/5"
             )}>
             ⭐ お気に入り
+          </button>
+          <button
+            onClick={() => setActiveTab("prompts")}
+            className={cn(
+              "flex-1 text-sm font-medium transition-colors tab-button rounded-none border border-white/10",
+              activeTab === "prompts"
+                ? "bg-white/10 border-b-2 border-purple-400 text-white"
+                : "text-gray-400 hover:text-white hover:bg-white/5"
+            )}>
+            ✨ プロンプト
           </button>
         </div>
 
@@ -273,6 +286,52 @@ export function RightPanel({ isOpen, onClose }: RightPanelProps) {
                   <p className="text-xs mt-2">
                     ⭐ メッセージをお気に入り登録できます
                   </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === "prompts" && (
+            <div className="space-y-3">
+              <div className="text-xs text-gray-400 mb-3">
+                各パネルで使用中のプロンプト
+              </div>
+              {panels.map((panel) => (
+                <div
+                  key={panel.id}
+                  className="glass border border-white/10 hover:border-purple-400/30 transition-colors group rounded-lg p-3 bg-white/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="text-xs text-gray-400 mb-1">
+                        パネル {panel.id.replace('panel-', '')}
+                      </div>
+                      {panel.customPrompt ? (
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3 h-3 text-purple-400" />
+                          <span className="text-sm text-white">
+                            {panel.customPrompt.title}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-500">
+                          プロンプトなし
+                        </span>
+                      )}
+                    </div>
+                    {panel.customPrompt && (
+                      <button
+                        onClick={() => applyPromptToPanel(panel.id, '')}
+                        className="p-1 hover:bg-red-500/20 rounded transition-colors opacity-0 group-hover:opacity-100"
+                        title="プロンプトをクリア">
+                        <X className="w-3 h-3 text-red-400" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {panels.length === 0 && (
+                <div className="text-center text-gray-400 py-8">
+                  <p>アクティブなパネルがありません</p>
                 </div>
               )}
             </div>

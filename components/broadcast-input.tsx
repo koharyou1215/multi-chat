@@ -10,13 +10,15 @@ import { TIMING, BUTTON_GRADIENTS, COLORS, SIZES, ANIMATIONS, SHADOWS } from "@/
 import { generateId } from "@/lib/utils";
 import { PromptOptimizer } from "@/lib/prompt-optimizer";
 import type { Attachment } from "@/types";
+import * as Dialog from "@radix-ui/react-dialog";
+import type { CustomPrompt } from "@/types";
 
 interface BroadcastInputProps {
   variant?: "glass" | "simple";
 }
 
 export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
-  const { panels, activePanels, selectedPanelId, multiSendIds, customPrompts = [], applyPromptToPanel, openRouterApiKey, resetPrompts, deleteCustomPrompt, updateCustomPrompt } =
+  const { panels, activePanels, selectedPanelId, multiSendIds, customPrompts = [], applyPromptToPanel, openRouterApiKey, resetPrompts, deleteCustomPrompt, updateCustomPrompt, setPromptLibraryOpen, setEditingPromptId } =
     useAppStore();
   const { sendMessage, isConfigured } = useOpenRouter();
   const [value, setValue] = useState("");
@@ -27,6 +29,11 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
   const [activePrompt, setActivePrompt] = useState<any>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const promptMenuRef = useRef<HTMLDivElement>(null);
+  // const { setPromptLibraryOpen, setEditingPromptId } = useApp(); // 削除: エラー原因
+
+  // PromptMenu 部分に状態追加
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingPrompt, setDeletingPrompt] = useState<CustomPrompt | null>(null);
 
   const visiblePanels = panels.slice(0, activePanels);
   const isAnyLoading = visiblePanels.some((p) => p.isLoading);
@@ -112,7 +119,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
 
       // Handle {input} variable replacement if present
       let finalMessage = trimmed;
-      let systemPrompt = promptContent;
+      let systemPrompt: string | undefined = promptContent;
 
       if (promptContent && promptContent.includes('{input}')) {
         // Replace {input} with user message and don't use as system prompt
@@ -197,25 +204,31 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     setIsOptimizing(true);
 
     try {
-      // Use the OpenRouter API key for optimization
-      const optimizer = new PromptOptimizer(openRouterApiKey);
+      // Use PromptOptimizer to produce a template that preserves {input}
+      const panelModel = panels.find((p) => p.id === selectedPanelId)?.modelId || panels[0]?.modelId;
+      const optimizer = new PromptOptimizer(openRouterApiKey, panelModel);
 
-      // Create a temporary prompt object for optimization
-      const tempPrompt = {
-        id: generateId(),
-        title: "Optimization Target",
-        content: trimmed,
-        tags: [],
-        isDefault: false,
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-      };
+      // Build a simple template around {input} for optimization guidance
+      const template = `{input}`; // We'll ask the optimizer to create a template around the sample
 
-      // Optimize with clarity mode by default
-      const result = await optimizer.optimizePrompt(tempPrompt, { mode: "clarity" });
+      const result = await optimizer.optimizeTemplateWithSample(template, trimmed, { mode: "clarity" });
 
-      // Update the input with optimized content
-      setValue(result.optimizedContent);
+      // The optimizer returns a template containing {input}; set it into the library creation flow
+      const optimizedTemplate = result.optimizedContent;
+
+      console.log('最適化結果テンプレート:', optimizedTemplate);
+
+      // If optimizing from input, place the optimized prompt into the input field
+      // Fill the {input} placeholder with the original text so it's ready to send
+      try {
+        const filled = optimizedTemplate.includes('{input}')
+          ? optimizedTemplate.replace(/\{input\}/g, trimmed)
+          : optimizedTemplate;
+        setValue(filled);
+        console.log('入力欄に最適化結果をセットしました');
+      } catch (e) {
+        console.error('入力欄への反映に失敗:', e);
+      }
 
       // Auto-adjust textarea height
       setTimeout(() => {
@@ -243,12 +256,12 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
   // Style configurations based on variant
   const containerClass =
     variant === "glass"
-      ? "p-6 bg-gradient-to-t from-purple-900/60 via-purple-800/40 to-transparent backdrop-blur-3xl border-t border-white/30 shadow-2xl"
+      ? "p-4 md:p-6 bg-gradient-to-t from-purple-900/60 via-purple-800/40 to-transparent backdrop-blur-3xl border-t border-white/30 shadow-2xl layout-footer"
       : "p-3 border-t bg-background";
 
   const inputWrapperClass =
     variant === "glass"
-      ? "flex flex-col gap-4 px-6 py-5 glass-dark backdrop-blur-2xl rounded-2xl"
+      ? "flex flex-col gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-5 glass-dark backdrop-blur-2xl rounded-2xl"
       : "rounded-lg border p-2 flex items-end space-x-2";
 
   return (
@@ -331,26 +344,32 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
                                 </div>
                                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <button
-                                    onClick={(e) => {
+                                  onClick={(e) => {
                                       e.stopPropagation();
-                                      // TODO: Open edit dialog
-                                      console.log("Edit prompt:", prompt.id);
+                                      try {
+                                        setPromptLibraryOpen(true);
+                                        setEditingPromptId(prompt.id);
+                                        console.log("編集: ライブラリを開きプロンプト選択", prompt.id);
+                                      } catch (err) {
+                                        console.error('編集遷移失敗:', err);
+                                        alert('編集画面への遷移に失敗しました。');
+                                      }
+                                      setShowPromptMenu(false);
                                     }}
                                     className="p-1.5 hover:bg-purple-600/20 rounded transition-colors"
-                                    title="編集"
-                                  >
+                                    title="編集">
                                     <Edit2 className="w-3.5 h-3.5 text-purple-400" />
                                   </button>
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      if (confirm(`「${prompt.title}」を削除しますか？`)) {
-                                        deleteCustomPrompt(prompt.id);
-                                      }
+                                      // ブロック削除: すべて削除可能に
+                                      setDeletingPrompt(prompt);
+                                      setDeleteConfirmOpen(true);
+                                      console.log('削除確認トリガー: ID =', prompt.id);
                                     }}
                                     className="p-1.5 hover:bg-red-600/20 rounded transition-colors"
-                                    title="削除"
-                                  >
+                                    title="削除">
                                     <Trash2 className="w-3.5 h-3.5 text-red-400" />
                                   </button>
                                 </div>
@@ -397,7 +416,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
             </div>
 
             {/* Text Input Area */}
-            <div className="flex-1 glass-dark rounded-2xl px-4 py-3 min-h-[48px] flex flex-col">
+            <div className="flex-1 glass-dark rounded-2xl px-4 py-3 min-h-[48px] flex flex-col w-full">
               {/* Active Prompt Indicator */}
               {activePrompt && (
                 <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
@@ -484,6 +503,45 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
           />
         </div>
       </div>
+
+      {deleteConfirmOpen && deletingPrompt && (
+        <Dialog.Root open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[200]" />
+            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-md p-6 w-80 z-[210]">
+              <Dialog.Title className="text-lg font-semibold mb-4">削除確認</Dialog.Title>
+              <p className="text-sm text-gray-300 mb-4">
+                「{deletingPrompt.title}」を削除しますか？
+              </p>
+              <div className="flex justify-end gap-2">
+                <Dialog.Close asChild>
+                  <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+                    キャンセル
+                  </Button>
+                </Dialog.Close>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    try {
+                      if (!deletingPrompt) throw new Error('no prompt');
+                      deleteCustomPrompt(deletingPrompt.id);
+                      console.log('削除実行成功: ID =', deletingPrompt.id);
+                    } catch (error) {
+                      console.error('削除失敗:', error);
+                      alert('削除に失敗しました。リロードしてください。');
+                    }
+                    setDeleteConfirmOpen(false);
+                    setDeletingPrompt(null);
+                    setShowPromptMenu(false);
+                  }}
+                >
+                  削除
+                </Button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
+      )}
     </div>
   );
 }
