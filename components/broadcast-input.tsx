@@ -160,8 +160,24 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     setAttachments(attachments.filter((_, i) => i !== index));
   };
 
+  // Handle clearing active prompt
+  const handleClearPrompt = useCallback(() => {
+    setActivePrompt(null);
+
+    // Clear from ALL visible panels
+    visiblePanels.forEach(panel => {
+      applyPromptToPanel(panel.id, '');
+    });
+  }, [visiblePanels, applyPromptToPanel]);
+
   // Handle prompt selection from library
   const handleSelectPrompt = useCallback((prompt: any) => {
+    // If same prompt is selected, deselect it
+    if (activePrompt?.id === prompt.id) {
+      handleClearPrompt();
+      return;
+    }
+
     // Set as active prompt
     setActivePrompt(prompt);
 
@@ -176,17 +192,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     if (inputRef.current) {
       inputRef.current.focus();
     }
-  }, [visiblePanels, applyPromptToPanel]);
-
-  // Handle clearing active prompt
-  const handleClearPrompt = useCallback(() => {
-    setActivePrompt(null);
-
-    // Clear from ALL visible panels
-    visiblePanels.forEach(panel => {
-      applyPromptToPanel(panel.id, '');
-    });
-  }, [visiblePanels, applyPromptToPanel]);
+  }, [visiblePanels, applyPromptToPanel, activePrompt, handleClearPrompt]);
 
   // Handle prompt optimization
   const handleOptimizePrompt = async () => {

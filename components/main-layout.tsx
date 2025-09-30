@@ -400,18 +400,16 @@ export const MainLayout = memo(function MainLayout() {
           style={isMobile ? {
             position: 'fixed',
             top: '56px',
-            bottom: '0',
+            bottom: '80px',
             left: 0,
             right: 0,
-            paddingBottom: `calc(80px + env(safe-area-inset-bottom, 0px))`,
             overflowY: 'auto',
             overflowX: 'hidden',
             WebkitOverflowScrolling: 'touch',
-            width: '100vw',
-            maxWidth: '100vw'
+            width: '100%'
           } : {}}>
           {/* Chat Panels Grid */}
-          <div className={isMobile ? "p-2" : "p-4"} style={isMobile ? { width: '100%', maxWidth: '100vw' } : {}}>
+          <div className={isMobile ? "p-2" : "p-4"} style={{ width: '100%' }}>
             <div
               className={cn(
                 "grid gap-4",
@@ -423,7 +421,6 @@ export const MainLayout = memo(function MainLayout() {
                   ? "grid-cols-1 lg:grid-cols-3"
                   : "grid-cols-1 md:grid-cols-2"
               )}
-              style={isMobile ? { width: '100%', maxWidth: '100%' } : {}}
               >
               {panels && panels.length > 0 ? (
                 panels.slice(0, activePanels).map((panel) => {
@@ -487,10 +484,9 @@ export const MainLayout = memo(function MainLayout() {
           bottom: 0,
           left: 0,
           right: 0,
-          width: '100vw',
-          maxWidth: '100vw',
-          minHeight: '80px',
-          paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)',
+          width: '100%',
+          height: '80px',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
           background: 'rgba(31, 41, 55, 0.98)',
           boxSizing: 'border-box'
         } : {}}>
