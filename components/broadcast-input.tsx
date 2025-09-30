@@ -1,36 +1,85 @@
 "use client";
 
-import { useState, useRef, KeyboardEvent } from "react";
+import { useState, useRef, KeyboardEvent, useCallback, useEffect } from "react";
 import { Button } from "./ui/button";
-import { Send, Paperclip, X } from "lucide-react";
+import { Send, Paperclip, X, Clipboard, BookOpen, Sparkles, Edit2, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/use-app-store";
 import { useOpenRouter } from "@/hooks/use-openrouter";
+import { TIMING, BUTTON_GRADIENTS, COLORS, SIZES, ANIMATIONS, SHADOWS } from "@/lib/constants";
+import { generateId } from "@/lib/utils";
+import { PromptOptimizer } from "@/lib/prompt-optimizer";
+import { ContentEditableInput, ContentEditableInputRef } from "./content-editable-input";
+import { zIndex } from "@/lib/z-index";
+import type { Attachment } from "@/types";
+import * as Dialog from "@radix-ui/react-dialog";
+import type { CustomPrompt } from "@/types";
 
-export function BroadcastInput() {
-  const { panels, activePanels, selectedPanelId, multiSendIds } =
-    useAppStore() as any;
+interface BroadcastInputProps {
+  variant?: "glass" | "simple";
+}
+
+export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
+  const { panels, activePanels, selectedPanelId, multiSendIds, customPrompts = [], applyPromptToPanel, openRouterApiKey, resetPrompts, deleteCustomPrompt, updateCustomPrompt, setPromptLibraryOpen, setEditingPromptId } =
+    useAppStore();
   const { sendMessage, isConfigured } = useOpenRouter();
   const [value, setValue] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<ContentEditableInputRef>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+  const [showPromptMenu, setShowPromptMenu] = useState(false);
+  const [activePrompt, setActivePrompt] = useState<any>(null);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const promptMenuRef = useRef<HTMLDivElement>(null);
+
+  // PromptMenu 部分に状態追加
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deletingPrompt, setDeletingPrompt] = useState<CustomPrompt | null>(null);
 
   const visiblePanels = panels.slice(0, activePanels);
-  const isAnyLoading = visiblePanels.some((p: any) => p.isLoading);
-  const isDisabled = isAnyLoading || !isConfigured;
+  const isAnyLoading = visiblePanels.some((p) => p.isLoading);
+  // 一時的にAPIキーチェックを緩める（開発用）
+  const isDisabled = isAnyLoading; // || !isConfigured を削除
 
-  const [target, setTarget] = useState<"all" | "selected" | "multi">("all");
-
-  const adjustTextareaHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, 120)}px`;
+  // Reset prompts if empty (ensure default prompts are available)
+  useEffect(() => {
+    console.log("📚 Current prompts count:", customPrompts?.length || 0);
+    if (!customPrompts || customPrompts.length === 0) {
+      console.log("📚 No prompts found, resetting to default prompts");
+      if (resetPrompts) {
+        resetPrompts();
+      }
     }
-  };
+  }, [customPrompts?.length]);
 
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  // Click outside to close prompt menu
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (promptMenuRef.current && !promptMenuRef.current.contains(event.target as Node)) {
+        setShowPromptMenu(false);
+      }
+    }
+
+    if (showPromptMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showPromptMenu]);
+
+  // Debug: Check why input is disabled
+  console.log("🔍 BroadcastInput state:", {
+    isConfigured,
+    isAnyLoading,
+    isDisabled,
+    visiblePanelsCount: visiblePanels.length,
+    hasLoadingPanels: visiblePanels.filter(p => p.isLoading).length,
+    note: "APIキーチェックを一時的に無効化"
+  });
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void handleSend();
@@ -39,152 +88,468 @@ export function BroadcastInput() {
 
   const handleSend = async () => {
     const trimmed = value.trim();
-    if (!trimmed || !isConfigured) return;
+    if (!trimmed) return;  // isConfigured チェックを削除
 
     setValue("");
 
+    // チェックボックスで選択されたパネルに送信
     const targets =
-      target === "all"
-        ? visiblePanels
-        : target === "selected"
-        ? visiblePanels.filter((p: any) => p.id === selectedPanelId)
-        : visiblePanels.filter((p: any) => multiSendIds.includes(p.id));
-    await Promise.all(
-      targets.map((panel: any) =>
-        sendMessage(
-          panel.id,
-          panel.modelId,
-          trimmed,
-          panel.messages,
-          panel.customPrompt?.content,
-          attachments.map((f, i) => ({
-            id: `${i}`,
-            type: "file",
-            name: f.name,
-            url: URL.createObjectURL(f),
-            size: f.size,
-            mimeType: f.type,
-          }))
-        )
-      )
-    );
-    setAttachments([]);
-  };
+      multiSendIds.length > 0
+        ? visiblePanels.filter((p) => multiSendIds.includes(p.id))
+        : visiblePanels;
 
-  const handleFileClick = () => {
-    fileInputRef.current?.click();
+    // 並列送信：全てのパネルに同時にメッセージを送信
+    const sendPromises = targets.map(panel => {
+      // Get custom prompt content
+      const promptContent = panel.customPrompt?.content || "";
+
+      console.log("🎯 Sending with prompt:", {
+        panelId: panel.id,
+        hasPrompt: !!panel.customPrompt,
+        promptTitle: panel.customPrompt?.title,
+        promptContent: promptContent ? promptContent.substring(0, 50) + "..." : "none"
+      });
+
+      // Handle {input} variable replacement if present
+      let finalMessage = trimmed;
+      let systemPrompt: string | undefined = promptContent;
+
+      if (promptContent && promptContent.includes('{input}')) {
+        // Replace {input} with user message and don't use as system prompt
+        finalMessage = promptContent.replace(/\{input\}/g, trimmed);
+        systemPrompt = undefined; // Don't use as system prompt if it has {input}
+      }
+
+      return sendMessage(
+        panel.id,
+        panel.modelId,
+        finalMessage,
+        panel.messages || [],
+        systemPrompt, // Pass the prompt as system prompt
+        attachments
+      );
+    });
+
+    // 全ての送信完了を待つ（但し、各パネルは独立して処理される）
+    await Promise.allSettled(sendPromises);
+
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+    setAttachments([]);
+    setActivePrompt(null);  // Reset active prompt after sending
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setAttachments((prev) => [...prev, ...files]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    const newAttachments: Attachment[] = files.map((file) => ({
+      id: generateId(),
+      type: file.type.startsWith("image/") ? "image" : "file",
+      name: file.name,
+      url: URL.createObjectURL(file),
+      size: file.size,
+      mimeType: file.type,
+    }));
+    setAttachments([...attachments, ...newAttachments]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
   };
 
   const removeAttachment = (index: number) => {
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
+    setAttachments(attachments.filter((_, i) => i !== index));
   };
 
-  const placeholder =
-    target === "all"
-      ? "メッセージを入力... 全パネルへ同時送信 (Shift+Enterで改行)"
-      : target === "selected"
-      ? `メッセージを入力... 選択パネル(${
-          selectedPanelId?.split("-")[1] || "-"
-        })へ送信 (Shift+Enterで改行)`
-      : `メッセージを入力... 複数パネル(${multiSendIds.length})へ送信 (Shift+Enterで改行)`;
+  // Handle clearing active prompt
+  const handleClearPrompt = useCallback(() => {
+    setActivePrompt(null);
+
+    // Clear from ALL visible panels
+    visiblePanels.forEach(panel => {
+      applyPromptToPanel(panel.id, '');
+    });
+  }, [visiblePanels, applyPromptToPanel]);
+
+  // Handle prompt selection from library
+  const handleSelectPrompt = useCallback((prompt: any) => {
+    // If same prompt is selected, deselect it
+    if (activePrompt?.id === prompt.id) {
+      handleClearPrompt();
+      return;
+    }
+
+    // Set as active prompt
+    setActivePrompt(prompt);
+
+    // Always apply to ALL visible panels
+    visiblePanels.forEach(panel => {
+      applyPromptToPanel(panel.id, prompt.id);
+    });
+
+    setShowPromptMenu(false);
+
+    // Focus the input
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [visiblePanels, applyPromptToPanel, activePrompt, handleClearPrompt]);
+
+  // Handle prompt optimization
+  const handleOptimizePrompt = async () => {
+    const trimmed = value.trim();
+    if (!trimmed || isOptimizing) return;
+
+    setIsOptimizing(true);
+
+    try {
+      // Always use Panel 1's model for optimization (as per requirements)
+      const panelModel = panels[0]?.modelId;
+      console.log('🔍 最適化デバッグ:', {
+        apiKey: openRouterApiKey ? 'あり' : 'なし',
+        model: panelModel || 'なし',
+        note: 'Always using Panel 1 model'
+      });
+      const optimizer = new PromptOptimizer(openRouterApiKey, panelModel);
+
+      // Build a simple template around {input} for optimization guidance
+      const template = `{input}`; // We'll ask the optimizer to create a template around the sample
+
+      const result = await optimizer.optimizeTemplateWithSample(template, trimmed, { mode: "clarity" });
+
+      // The optimizer returns a template containing {input}; set it into the library creation flow
+      const optimizedTemplate = result.optimizedContent;
+
+      console.log('最適化結果テンプレート:', optimizedTemplate);
+
+      // If optimizing from input, place the optimized prompt into the input field
+      // Fill the {input} placeholder with the original text so it's ready to send
+      try {
+        const filled = optimizedTemplate.includes('{input}')
+          ? optimizedTemplate.replace(/\{input\}/g, trimmed)
+          : optimizedTemplate;
+        setValue(filled);
+        console.log('入力欄に最適化結果をセットしました');
+      } catch (e) {
+        console.error('入力欄への反映に失敗:', e);
+      }
+
+      console.log("✨ Prompt optimized:", {
+        original: trimmed.substring(0, 50) + "...",
+        optimized: result.optimizedContent.substring(0, 50) + "...",
+        improvements: result.improvements,
+        tokenReduction: result.tokenReduction
+      });
+    } catch (error) {
+      console.error("Optimization failed:", error);
+      // Keep original text on failure
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
+  // Style configurations based on variant
+  const containerClass =
+    variant === "glass"
+      ? "p-4 md:p-6 bg-gradient-to-t from-purple-900/60 via-purple-800/40 to-transparent backdrop-blur-3xl border-t border-white/30 shadow-2xl layout-footer broadcast-input-container overflow-visible"
+      : "p-3 border-t bg-background";
+
+  const inputWrapperClass =
+    variant === "glass"
+      ? "flex flex-col gap-3 md:gap-4 px-4 md:px-6 py-4 md:py-5 glass-dark backdrop-blur-2xl rounded-2xl min-h-[80px]"
+      : "rounded-lg border p-2 flex items-end space-x-2";
 
   return (
-    <div className="p-3 border-t bg-background">
-      <div className="flex items-end gap-2">
-        <div className="flex items-center gap-2">
-          <label className="text-xs text-muted-foreground">送信対象</label>
-          <select
-            className="text-xs border rounded px-2 py-1 bg-background"
-            value={target}
-            onChange={(e) => setTarget(e.target.value as any)}>
-            <option value="all">全パネル</option>
-            <option value="selected">選択パネル</option>
-            <option value="multi">複数選択</option>
-          </select>
-        </div>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-10 w-10 flex-shrink-0"
-          onClick={handleFileClick}
-          disabled={isDisabled}>
-          <Paperclip className="w-4 h-4" />
-        </Button>
-        <div className="flex-1">
+    <div className={containerClass} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div className="max-w-5xl mx-auto px-2 md:px-6" style={{ width: '100%', boxSizing: 'border-box' }}>
+        <div className={inputWrapperClass} style={{ width: '100%', boxSizing: 'border-box' }}>
+          {/* Attachments Preview */}
           {attachments.length > 0 && (
-            <div className="mb-2 flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-3 pb-3 border-b border-white/10">
               {attachments.map((file, index) => (
-                <div
-                  key={index}
-                  className="flex items-center gap-2 px-2 py-1 text-xs border rounded">
-                  {file.type.startsWith("image/") ? (
-                    <img
-                      className="w-8 h-8 object-cover rounded"
-                      src={URL.createObjectURL(file)}
-                      alt={file.name}
-                    />
-                  ) : (
-                    <span className="px-2 py-1 bg-muted/50 rounded">
-                      {file.type.split("/")[1] || "file"}
-                    </span>
-                  )}
-                  <span className="max-w-40 truncate">{file.name}</span>
+                <div key={index} className="flex items-center gap-1">
+                  <span className="px-2 py-1 glass rounded flex items-center gap-1">{file.name}</span>
                   <button
-                    className="text-muted-foreground hover:text-destructive"
-                    onClick={() => removeAttachment(index)}>
-                    <X className="w-3 h-3" />
+                    onClick={() => removeAttachment(index)}
+                    className="text-red-500 hover:text-red-600">
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               ))}
             </div>
           )}
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={(e) => {
-              setValue(e.target.value);
-              adjustTextareaHeight();
-            }}
-            onKeyDown={handleKeyDown}
-            placeholder={placeholder}
-            className={cn(
-              "w-full min-h-10 max-h-32 p-3 text-sm",
-              "bg-background border border-input rounded-md",
-              "resize-none overflow-auto custom-scrollbar",
-              "focus:outline-none focus:ring-2 focus:ring-ring",
-              "placeholder:text-muted-foreground",
-              "disabled:cursor-not-allowed disabled:opacity-50"
-            )}
-            disabled={isDisabled}
-            rows={1}
+
+          {/* Main Input Bar */}
+          <div className="flex items-start gap-2 w-full px-2">
+            {/* Button Group - Vertical (元に戻す) */}
+            <div className="flex flex-col gap-1">
+              {/* Prompt Library Button */}
+              <div className="relative" ref={promptMenuRef}>
+                <button
+                  className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
+                  style={{
+                    background: "transparent",
+                    color: "white",
+                  }}
+                  onClick={() => setShowPromptMenu(!showPromptMenu)}
+                  title="プロンプトライブラリ">
+                  <BookOpen className="w-3.5 h-3.5" style={{ color: "white" }} />
+                </button>
+
+                {/* Prompt Menu Dropdown */}
+                {showPromptMenu && (
+                  <div
+                    className={cn(
+                      "absolute left-0 bottom-full mb-2 bg-gray-900 backdrop-blur-sm border border-gray-700 rounded-lg shadow-2xl",
+                      zIndex('DROPDOWN')
+                    )}
+                    style={{ width: '400px', maxHeight: '400px', backgroundColor: 'rgba(17, 24, 39, 0.98)' }}>
+                    <div className="p-3 border-b border-gray-700 bg-gray-800/50">
+                      <div className="text-sm text-gray-300 font-semibold">プロンプトを選択</div>
+                      <div className="text-xs text-gray-500 mt-1">クリックしてプロンプトを適用</div>
+                    </div>
+                    <div className="overflow-y-auto" style={{ maxHeight: '320px' }}>
+                      <div className="space-y-1 p-2">
+                        {(() => {
+                          console.log("📋 Available prompts:", customPrompts?.length || 0);
+                          return customPrompts && customPrompts.length > 0;
+                        })() ? (
+                          customPrompts.map((prompt) => (
+                            <div
+                              key={prompt.id}
+                              className="p-3 bg-gray-800/70 hover:bg-gray-700/80 rounded-lg transition-all duration-200 border border-gray-700 hover:border-purple-500/50 hover:shadow-md group"
+                            >
+                              <div className="flex items-start justify-between">
+                                <div
+                                  className="flex-1 cursor-pointer"
+                                  onClick={() => handleSelectPrompt(prompt)}
+                                >
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Sparkles className="w-3 h-3 text-purple-400" />
+                                    <div className="text-sm font-medium text-gray-100">{prompt.title}</div>
+                                  </div>
+                                  <div className="text-xs text-gray-400 line-clamp-2 ml-5">
+                                    {prompt.content.substring(0, 100)}...
+                                  </div>
+                                  {prompt.tags && prompt.tags.length > 0 && (
+                                    <div className="flex gap-1 mt-2 flex-wrap ml-5">
+                                      {prompt.tags.slice(0, 3).map((tag, idx) => (
+                                        <span key={idx} className="px-2 py-0.5 bg-purple-600/20 text-purple-300 text-[10px] rounded-full">
+                                          {tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      try {
+                                        setPromptLibraryOpen(true);
+                                        setEditingPromptId(prompt.id);
+                                        console.log("編集: ライブラリを開きプロンプト選択", prompt.id);
+                                      } catch (err) {
+                                        console.error('編集遷移失敗:', err);
+                                        alert('編集画面への遷移に失敗しました。');
+                                      }
+                                      setShowPromptMenu(false);
+                                    }}
+                                    className="p-1.5 hover:bg-purple-600/20 rounded transition-colors"
+                                    title="編集">
+                                    <Edit2 className="w-3.5 h-3.5 text-purple-400" />
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      // ブロック削除: すべて削除可能に
+                                      setDeletingPrompt(prompt);
+                                      setDeleteConfirmOpen(true);
+                                      console.log('削除確認トリガー: ID =', prompt.id);
+                                    }}
+                                    className="p-1.5 hover:bg-red-600/20 rounded transition-colors"
+                                    title="削除">
+                                    <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-8 text-center">
+                            <BookOpen className="w-8 h-8 text-gray-600 mx-auto mb-3" />
+                            <div className="text-gray-400 mb-3">
+                              <div className="font-medium mb-1">プロンプトがありません</div>
+                              <div className="text-xs text-gray-500">サイドバーのプロンプトライブラリから新規作成してください</div>
+                            </div>
+                            <button
+                              onClick={() => {
+                                console.log("🔄 Resetting prompts to defaults");
+                                resetPrompts?.();
+                                setShowPromptMenu(false);
+                                setTimeout(() => setShowPromptMenu(true), 100);
+                              }}
+                              className="px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 text-xs rounded-lg transition-colors"
+                            >
+                              デフォルトプロンプトを読み込む
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* File Attachment Button */}
+              <button
+                className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
+                style={{
+                  background: "transparent",
+                  color: "white",
+                }}
+                onClick={() => fileInputRef.current?.click()}
+                title="ファイルを添付">
+                <Paperclip className="w-3.5 h-3.5" style={{ color: "white" }} />
+              </button>
+            </div>
+
+            {/* Text Input Area */}
+              <div className="flex-1 glass-dark rounded-2xl px-4 py-3 min-h-[60px] md:min-h-[48px] flex flex-col w-full">
+              {/* Active Prompt Indicator */}
+              {activePrompt && (
+                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  <span className="text-xs text-purple-300 flex-1">
+                    {activePrompt.title} を使用中
+                  </span>
+                  <button
+                    onClick={handleClearPrompt}
+                    className="p-1 hover:bg-white/10 rounded transition-colors"
+                    title="プロンプトをクリア"
+                  >
+                    <X className="w-3 h-3 text-gray-400 hover:text-white" />
+                  </button>
+                </div>
+              )}
+
+              {/* Safari-optimized ContentEditable Input */}
+              <ContentEditableInput
+                ref={inputRef}
+                value={value}
+                onChange={setValue}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  !isConfigured
+                    ? "APIキーを設定してください"
+                    : "メッセージを入力... (Enterで送信)"
+                }
+                className="w-full resize-none bg-transparent border-0 outline-none text-white placeholder:text-gray-400 focus:ring-0 text-base md:text-sm"
+                maxLength={10000}
+                style={{
+                  minHeight: '40px',
+                  maxHeight: `${TIMING.MAX_TEXTAREA_HEIGHT}px`,
+                  color: `${COLORS.TEXT_LIGHT} !important`,
+                  fontSize: '16px', // Prevent iOS zoom
+                  lineHeight: '1.5',
+                }}
+              />
+            </div>
+
+            {/* Button Group - Send and Optimize */}
+            <div className="flex flex-col gap-2 items-center flex-shrink-0">
+              {/* Send Button - Touch optimized */}
+              <button
+                className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0 border border-white/50 whitespace-nowrap"
+                style={{
+                  background: "transparent",
+                  color: "white",
+                }}
+                onClick={handleSend}
+                disabled={!value.trim()}
+                title="メッセージを送信">
+                <span style={{ color: "white" }}>送信</span>
+                <Send
+                  className="w-4 h-4 group-hover:translate-x-1 transition-transform"
+                  style={{ color: "white" }}
+                />
+              </button>
+
+              {/* Optimize Button - Touch optimized */}
+              <button
+                className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 group flex-shrink-0 border border-white/50 disabled:opacity-50 whitespace-nowrap"
+                style={{
+                  background: "transparent",
+                  color: "white",
+                }}
+                onClick={handleOptimizePrompt}
+                disabled={!value.trim() || isOptimizing || !openRouterApiKey}
+                title={openRouterApiKey ? "プロンプトを最適化" : "APIキーが設定されていません"}
+              >
+                <span style={{ color: "white" }}>{isOptimizing ? "最適化中..." : "最適化"}</span>
+                <Sparkles
+                  className={`w-4 h-4 ${isOptimizing ? "animate-pulse" : ""}`}
+                  style={{ color: "white" }}
+                />
+              </button>
+
+              {/* 小さなヒント: APIキー未設定時 */}
+              {!openRouterApiKey && (
+                <div className="text-[11px] text-gray-400 mt-1 text-center">APIキーが設定されていません。設定で入力してください。</div>
+              )}
+            </div>
+          </div>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={handleFileChange}
           />
         </div>
-        <Button
-          size="icon"
-          className="h-10 w-10 flex-shrink-0"
-          onClick={() => void handleSend()}
-          disabled={isDisabled || !value.trim()}>
-          <Send className="w-4 h-4" />
-        </Button>
       </div>
-      {!isConfigured && (
-        <div className="pt-2 text-xs text-destructive">
-          OpenRouter APIキーが未設定です。右の「設定」から登録してください。
-        </div>
+
+      {deleteConfirmOpen && deletingPrompt && (
+        <Dialog.Root open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <Dialog.Portal>
+            <Dialog.Overlay className={cn("fixed inset-0 bg-black/50", zIndex('MODAL_BACKDROP'))} />
+            <Dialog.Content className={cn(
+              "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-md p-6 w-80",
+              zIndex('MODAL_CONTENT')
+            )}>
+              <Dialog.Title className="text-lg font-semibold mb-4">削除確認</Dialog.Title>
+              <p className="text-sm text-gray-300 mb-4">
+                「{deletingPrompt.title}」を削除しますか？
+              </p>
+              <div className="flex justify-end gap-2">
+                <Dialog.Close asChild>
+                  <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>
+                    キャンセル
+                  </Button>
+                </Dialog.Close>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    try {
+                      if (!deletingPrompt) throw new Error('no prompt');
+                      deleteCustomPrompt(deletingPrompt.id);
+                      console.log('削除実行成功: ID =', deletingPrompt.id);
+                    } catch (error) {
+                      console.error('削除失敗:', error);
+                      alert('削除に失敗しました。リロードしてください。');
+                    }
+                    setDeleteConfirmOpen(false);
+                    setDeletingPrompt(null);
+                    setShowPromptMenu(false);
+                  }}
+                >
+                  削除
+                </Button>
+              </div>
+            </Dialog.Content>
+          </Dialog.Portal>
+        </Dialog.Root>
       )}
-      <input
-        ref={fileInputRef}
-        type="file"
-        multiple
-        onChange={handleFileChange}
-        className="hidden"
-      />
     </div>
   );
 }

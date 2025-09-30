@@ -21,6 +21,16 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpac
 
 /***/ }),
 
+/***/ "(ssr)/./node_modules/zustand/esm/middleware/immer.mjs":
+/*!*******************************************************!*\
+  !*** ./node_modules/zustand/esm/middleware/immer.mjs ***!
+  \*******************************************************/
+/***/ ((__unused_webpack___webpack_module__, __webpack_exports__, __webpack_require__) => {
+
+eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpack_require__.d(__webpack_exports__, {\n/* harmony export */   immer: () => (/* binding */ immer)\n/* harmony export */ });\n/* harmony import */ var immer__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! immer */ \"(ssr)/./node_modules/immer/dist/immer.mjs\");\n\n\nconst immerImpl = (initializer) => (set, get, store) => {\n  store.setState = (updater, replace, ...args) => {\n    const nextState = typeof updater === \"function\" ? (0,immer__WEBPACK_IMPORTED_MODULE_0__.produce)(updater) : updater;\n    return set(nextState, replace, ...args);\n  };\n  return initializer(store.setState, get, store);\n};\nconst immer = immerImpl;\n\n\n//# sourceURL=[module]\n//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiKHNzcikvLi9ub2RlX21vZHVsZXMvenVzdGFuZC9lc20vbWlkZGxld2FyZS9pbW1lci5tanMiLCJtYXBwaW5ncyI6Ijs7Ozs7QUFBZ0M7O0FBRWhDO0FBQ0E7QUFDQSxzREFBc0QsOENBQU87QUFDN0Q7QUFDQTtBQUNBO0FBQ0E7QUFDQTs7QUFFaUIiLCJzb3VyY2VzIjpbIkM6XFxtdWx0aSBjaGF0XFxtdWx0aS1jaGF0XFxub2RlX21vZHVsZXNcXHp1c3RhbmRcXGVzbVxcbWlkZGxld2FyZVxcaW1tZXIubWpzIl0sInNvdXJjZXNDb250ZW50IjpbImltcG9ydCB7IHByb2R1Y2UgfSBmcm9tICdpbW1lcic7XG5cbmNvbnN0IGltbWVySW1wbCA9IChpbml0aWFsaXplcikgPT4gKHNldCwgZ2V0LCBzdG9yZSkgPT4ge1xuICBzdG9yZS5zZXRTdGF0ZSA9ICh1cGRhdGVyLCByZXBsYWNlLCAuLi5hcmdzKSA9PiB7XG4gICAgY29uc3QgbmV4dFN0YXRlID0gdHlwZW9mIHVwZGF0ZXIgPT09IFwiZnVuY3Rpb25cIiA/IHByb2R1Y2UodXBkYXRlcikgOiB1cGRhdGVyO1xuICAgIHJldHVybiBzZXQobmV4dFN0YXRlLCByZXBsYWNlLCAuLi5hcmdzKTtcbiAgfTtcbiAgcmV0dXJuIGluaXRpYWxpemVyKHN0b3JlLnNldFN0YXRlLCBnZXQsIHN0b3JlKTtcbn07XG5jb25zdCBpbW1lciA9IGltbWVySW1wbDtcblxuZXhwb3J0IHsgaW1tZXIgfTtcbiJdLCJuYW1lcyI6W10sImlnbm9yZUxpc3QiOlswXSwic291cmNlUm9vdCI6IiJ9\n//# sourceURL=webpack-internal:///(ssr)/./node_modules/zustand/esm/middleware/immer.mjs\n");
+
+/***/ }),
+
 /***/ "(ssr)/./node_modules/zustand/esm/react.mjs":
 /*!********************************************!*\
   !*** ./node_modules/zustand/esm/react.mjs ***!

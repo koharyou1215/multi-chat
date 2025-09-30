@@ -1,0 +1,270 @@
+/* Safari Mobile Layout Fixes for iPhone 15 Pro Max */
+
+/* iOS Safari viewport fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Root container fixes */
+  html, body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Disable Safari form navigation bar */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  textarea {
+    font-size: 16px !important; /* Prevent zoom */
+    -webkit-appearance: none;
+    -webkit-border-radius: 0;
+    border-radius: 0;
+  }
+
+  /* Disable Safari input accessories */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  /* ContentEditable Safari optimizations */
+  [contenteditable="true"] {
+    -webkit-user-select: text;
+    -webkit-touch-callout: default;
+    font-size: 16px !important; /* Prevent zoom */
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  /* Fixed positioning improvements */
+  .app-shell-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* Header optimization */
+  .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    z-index: 50;
+    background: rgba(31, 41, 55, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Footer optimization */
+  .mobile-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    min-height: 80px;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    z-index: 50;
+    background: rgba(31, 41, 55, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Main content area */
+  .mobile-main {
+    position: fixed;
+    top: 56px;
+    bottom: 80px;
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
+
+  /* Sidebar fixes */
+  aside.fixed {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 40;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  aside.fixed.open {
+    transform: translateX(0);
+    -webkit-transform: translateX(0);
+  }
+
+  /* Keyboard handling */
+  .broadcast-input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: rgba(31, 41, 55, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Content editable specific fixes */
+  .content-editable-input {
+    -webkit-user-select: text;
+    -webkit-touch-callout: default;
+    -webkit-appearance: none;
+    font-size: 16px !important;
+    line-height: 1.5;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
+  }
+
+  /* Prevent bounce scrolling */
+  body {
+    position: fixed;
+    overflow: hidden;
+  }
+
+  /* Touch improvements */
+  button {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Modal fixes */
+  [role="dialog"] {
+    position: fixed;
+    z-index: 1000;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  /* Dropdown fixes */
+  [data-radix-popper-content-wrapper] {
+    z-index: 100;
+    position: fixed;
+    background: rgba(31, 41, 55, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+  }
+}
+
+/* iPhone 15 Pro Max specific adjustments */
+@media screen and (device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) {
+  .mobile-header {
+    height: 60px;
+  }
+
+  .mobile-main {
+    top: 60px;
+    bottom: 84px;
+  }
+
+  .mobile-footer {
+    min-height: 84px;
+  }
+
+  /* Safe area adjustments */
+  .mobile-header {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .mobile-footer {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
+  }
+}
+
+/* Landscape orientation fixes */
+@media screen and (orientation: landscape) and (max-height: 500px) {
+  .mobile-header {
+    height: 44px;
+  }
+
+  .mobile-main {
+    top: 44px;
+    bottom: 60px;
+  }
+
+  .mobile-footer {
+    min-height: 60px;
+  }
+}
+
+/* Touch target optimization */
+@media (hover: none) and (pointer: coarse) {
+  button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    touch-action: manipulation;
+  }
+
+  .chat-panel .message-action-btn {
+    padding: 0.75rem !important;
+    margin: 0.25rem !important;
+  }
+
+  /* Larger touch targets for mobile */
+  .glass-dark button,
+  header button {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 0.75rem !important;
+  }
+}
+
+/* Content overflow prevention */
+.grid > * {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Prevent horizontal scroll */
+html,
+body,
+.app-shell-bg,
+.mobile-main {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+/* Z-index hierarchy enforcement */
+.z-background { z-index: 0; }
+.z-content { z-index: 1; }
+.z-sidebar { z-index: 40; }
+.z-sidebar-overlay { z-index: 35; }
+.z-header { z-index: 50; }
+.z-footer { z-index: 50; }
+.z-dropdown { z-index: 100; }
+.z-tooltip { z-index: 200; }
+.z-modal-backdrop { z-index: 1000; }
+.z-modal-content { z-index: 1100; }
+.z-prompt-library { z-index: 1200; }
+.z-settings-modal { z-index: 1300; }
+.z-debug-panel { z-index: 9000; }
+.z-toast { z-index: 9999; }

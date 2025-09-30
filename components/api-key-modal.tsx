@@ -13,8 +13,8 @@ interface ApiKeyModalProps {
 }
 
 export function ApiKeyModal({ open, onClose }: ApiKeyModalProps) {
-  const { openRouterApiKey, setApiKey } = useAppStore()
-  const [inputKey, setInputKey] = useState(openRouterApiKey)
+  const store = useAppStore()
+  const [inputKey, setInputKey] = useState(store.openRouterApiKey || "")
   const [error, setError] = useState('')
   
   const handleSave = () => {
@@ -23,7 +23,7 @@ export function ApiKeyModal({ open, onClose }: ApiKeyModalProps) {
       return
     }
     
-    setApiKey(inputKey)
+    store.setApiKey && store.setApiKey("openrouter", inputKey)
     setError('')
     onClose()
   }

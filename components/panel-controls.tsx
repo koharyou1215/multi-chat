@@ -23,7 +23,7 @@ export function PanelControls({
     setSelectedPanel,
     selectedPanelId,
     setModelForPanel,
-  } = useAppStore() as any;
+  } = useAppStore();
 
   const panelOptions = [
     { count: 1, icon: "1", label: "シングル" },
@@ -33,10 +33,10 @@ export function PanelControls({
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Panel Count Selection */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">
+        <h3 className="text-base font-semibold text-muted-foreground mb-4">
           パネル数
         </h3>
         <div className="grid grid-cols-4 gap-2">
@@ -46,13 +46,13 @@ export function PanelControls({
               variant={activePanels === option.count ? "default" : "outline"}
               size="sm"
               className={cn(
-                "h-12 flex flex-col items-center gap-1 text-xs",
+                "h-14 flex flex-col items-center gap-1 text-sm",
                 activePanels === option.count &&
                   "bg-primary text-primary-foreground"
               )}
               onClick={() => setPanelCount(option.count)}>
-              <span className="text-lg font-bold">{option.icon}</span>
-              <span>{option.label}</span>
+              <span className="text-2xl font-bold">{option.icon}</span>
+              <span className="text-sm">{option.label}</span>
             </Button>
           ))}
         </div>
@@ -60,7 +60,7 @@ export function PanelControls({
 
       {/* Quick Actions */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">
+        <h3 className="text-base font-semibold text-muted-foreground mb-3">
           クイックアクション
         </h3>
         <div className="space-y-2">
@@ -86,7 +86,7 @@ export function PanelControls({
 
       {/* Models List */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">
+        <h3 className="text-base font-semibold text-muted-foreground mb-3">
           モデル一覧
         </h3>
         <div className="space-y-2 max-h-60 overflow-auto custom-scrollbar">
@@ -99,8 +99,8 @@ export function PanelControls({
                     key={m.id}
                     className={cn(
                       "w-full text-left px-2 py-1 rounded border hover:bg-muted/50 text-sm",
-                      panels.find((p: any) => p.id === selectedPanelId)
-                        ?.modelId === m.id && "border-primary"
+                      panels.find(p => p.id === selectedPanelId)?.modelId ===
+                        m.id && "border-primary"
                     )}
                     onClick={() =>
                       selectedPanelId && setModelForPanel(selectedPanelId, m.id)
@@ -117,7 +117,7 @@ export function PanelControls({
 
       {/* Panel Layout Preview */}
       <div>
-        <h3 className="text-sm font-medium text-muted-foreground mb-3">
+        <h3 className="text-base font-semibold text-muted-foreground mb-3">
           レイアウトプレビュー
         </h3>
         <div className="bg-muted/30 rounded-md p-2">
