@@ -1,6 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import "./components/safari-mobile-fix.css";
+import ViewportStabilizer from "./components/ViewportStabilizer";
+import MobileLayoutFix from "./components/MobileLayoutFix";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -11,7 +14,16 @@ export const metadata: Metadata = {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
+    apple: '/apple-touch-icon.png',
   },
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -21,7 +33,39 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="format-detection" content="telephone=no" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
+              /* Critical Safari fixes loaded immediately */
+              @supports (-webkit-touch-callout: none) {
+                html, body {
+                  position: fixed;
+                  width: 100%;
+                  height: 100%;
+                  overflow: hidden;
+                  -webkit-overflow-scrolling: touch;
+                  -webkit-text-size-adjust: 100%;
+                  -webkit-tap-highlight-color: transparent;
+                }
+
+                input, textarea, [contenteditable] {
+                  font-size: 16px !important;
+                  -webkit-appearance: none;
+                }
+              }
+            `,
+          }}
+        />
+      </head>
       <body className={inter.className} suppressHydrationWarning>
+        <ViewportStabilizer />
+        <MobileLayoutFix />
         {children}
       </body>
     </html>

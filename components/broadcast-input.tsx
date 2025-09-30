@@ -9,6 +9,8 @@ import { useOpenRouter } from "@/hooks/use-openrouter";
 import { TIMING, BUTTON_GRADIENTS, COLORS, SIZES, ANIMATIONS, SHADOWS } from "@/lib/constants";
 import { generateId } from "@/lib/utils";
 import { PromptOptimizer } from "@/lib/prompt-optimizer";
+import { ContentEditableInput, ContentEditableInputRef } from "./content-editable-input";
+import { zIndex } from "@/lib/z-index";
 import type { Attachment } from "@/types";
 import * as Dialog from "@radix-ui/react-dialog";
 import type { CustomPrompt } from "@/types";
@@ -22,14 +24,13 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     useAppStore();
   const { sendMessage, isConfigured } = useOpenRouter();
   const [value, setValue] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<ContentEditableInputRef>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [showPromptMenu, setShowPromptMenu] = useState(false);
   const [activePrompt, setActivePrompt] = useState<any>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const promptMenuRef = useRef<HTMLDivElement>(null);
-  // const { setPromptLibraryOpen, setEditingPromptId } = useApp(); // 削除: エラー原因
 
   // PromptMenu 部分に状態追加
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -78,15 +79,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     note: "APIキーチェックを一時的に無効化"
   });
 
-  const adjustTextareaHeight = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      const scrollHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${Math.min(scrollHeight, TIMING.MAX_TEXTAREA_HEIGHT)}px`;
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       void handleSend();
@@ -140,9 +133,8 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     // 全ての送信完了を待つ（但し、各パネルは独立して処理される）
     await Promise.allSettled(sendPromises);
 
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.focus();
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
     setAttachments([]);
     setActivePrompt(null);  // Reset active prompt after sending
@@ -180,9 +172,9 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
 
     setShowPromptMenu(false);
 
-    // Focus the textarea
-    if (textareaRef.current) {
-      textareaRef.current.focus();
+    // Focus the input
+    if (inputRef.current) {
+      inputRef.current.focus();
     }
   }, [visiblePanels, applyPromptToPanel]);
 
@@ -204,11 +196,12 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     setIsOptimizing(true);
 
     try {
-      // Use PromptOptimizer to produce a template that preserves {input}
-      const panelModel = panels.find((p) => p.id === selectedPanelId)?.modelId || panels[0]?.modelId;
+      // Always use Panel 1's model for optimization (as per requirements)
+      const panelModel = panels[0]?.modelId;
       console.log('🔍 最適化デバッグ:', {
         apiKey: openRouterApiKey ? 'あり' : 'なし',
-        model: panelModel || 'なし'
+        model: panelModel || 'なし',
+        note: 'Always using Panel 1 model'
       });
       const optimizer = new PromptOptimizer(openRouterApiKey, panelModel);
 
@@ -234,15 +227,6 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
         console.error('入力欄への反映に失敗:', e);
       }
 
-      // Auto-adjust textarea height
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.style.height = "auto";
-          const scrollHeight = textareaRef.current.scrollHeight;
-          textareaRef.current.style.height = `${Math.min(scrollHeight, TIMING.MAX_TEXTAREA_HEIGHT)}px`;
-        }
-      }, 0);
-
       console.log("✨ Prompt optimized:", {
         original: trimmed.substring(0, 50) + "...",
         optimized: result.optimizedContent.substring(0, 50) + "...",
@@ -260,18 +244,18 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
   // Style configurations based on variant
   const containerClass =
     variant === "glass"
-      ? "p-4 md:p-6 bg-gradient-to-t from-purple-900/60 via-purple-800/40 to-transparent backdrop-blur-3xl border-t border-white/30 shadow-2xl layout-footer"
+      ? "p-4 md:p-6 bg-gradient-to-t from-purple-900/60 via-purple-800/40 to-transparent backdrop-blur-3xl border-t border-white/30 shadow-2xl layout-footer broadcast-input-container overflow-visible"
       : "p-3 border-t bg-background";
 
   const inputWrapperClass =
     variant === "glass"
-      ? "flex flex-col gap-3 md:gap-4 px-4 md:px-6 py-3 md:py-5 glass-dark backdrop-blur-2xl rounded-2xl"
+      ? "flex flex-col gap-3 md:gap-4 px-4 md:px-6 py-4 md:py-5 glass-dark backdrop-blur-2xl rounded-2xl min-h-[80px]"
       : "rounded-lg border p-2 flex items-end space-x-2";
 
   return (
-    <div className={containerClass}>
-      <div className="max-w-5xl mx-auto">
-        <div className={inputWrapperClass}>
+    <div className={containerClass} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+    <div className="max-w-5xl mx-auto px-2 md:px-6" style={{ width: '100%', boxSizing: 'border-box' }}>
+        <div className={inputWrapperClass} style={{ width: '100%', boxSizing: 'border-box' }}>
           {/* Attachments Preview */}
           {attachments.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-3 pb-3 border-b border-white/10">
@@ -307,7 +291,11 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
 
                 {/* Prompt Menu Dropdown */}
                 {showPromptMenu && (
-                  <div className="absolute left-0 bottom-full mb-2 bg-gray-900 backdrop-blur-sm border border-gray-700 rounded-lg shadow-2xl z-50"
+                  <div
+                    className={cn(
+                      "absolute left-0 bottom-full mb-2 bg-gray-900 backdrop-blur-sm border border-gray-700 rounded-lg shadow-2xl",
+                      zIndex('DROPDOWN')
+                    )}
                     style={{ width: '400px', maxHeight: '400px', backgroundColor: 'rgba(17, 24, 39, 0.98)' }}>
                     <div className="p-3 border-b border-gray-700 bg-gray-800/50">
                       <div className="text-sm text-gray-300 font-semibold">プロンプトを選択</div>
@@ -420,7 +408,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
             </div>
 
             {/* Text Input Area */}
-            <div className="flex-1 glass-dark rounded-2xl px-4 py-3 min-h-[48px] flex flex-col w-full">
+              <div className="flex-1 glass-dark rounded-2xl px-4 py-3 min-h-[60px] md:min-h-[48px] flex flex-col w-full">
               {/* Active Prompt Indicator */}
               {activePrompt && (
                 <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
@@ -437,34 +425,35 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
                   </button>
                 </div>
               )}
-              <textarea
-                ref={textareaRef}
-                className="w-full resize-none bg-transparent border-0 outline-none text-white placeholder:text-gray-400 focus:ring-0 text-sm"
+
+              {/* Safari-optimized ContentEditable Input */}
+              <ContentEditableInput
+                ref={inputRef}
+                value={value}
+                onChange={setValue}
+                onKeyDown={handleKeyDown}
                 placeholder={
                   !isConfigured
                     ? "APIキーを設定してください"
                     : "メッセージを入力... (Enterで送信)"
                 }
-                value={value}
-                onChange={(e) => {
-                  setValue(e.target.value);
-                  adjustTextareaHeight();
-                }}
-                onKeyDown={handleKeyDown}
-                rows={1}
+                className="w-full resize-none bg-transparent border-0 outline-none text-white placeholder:text-gray-400 focus:ring-0 text-base md:text-sm"
+                maxLength={10000}
                 style={{
-                  minHeight: `${TIMING.MIN_TEXTAREA_HEIGHT}px`,
+                  minHeight: '40px',
                   maxHeight: `${TIMING.MAX_TEXTAREA_HEIGHT}px`,
                   color: `${COLORS.TEXT_LIGHT} !important`,
+                  fontSize: '16px', // Prevent iOS zoom
+                  lineHeight: '1.5',
                 }}
               />
             </div>
 
             {/* Button Group - Send and Optimize */}
-            <div className="flex flex-col gap-2">
-              {/* Send Button */}
+            <div className="flex flex-col gap-2 items-center flex-shrink-0">
+              {/* Send Button - Touch optimized */}
               <button
-                className="px-4 py-1.5 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0 border border-white/50"
+                className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0 border border-white/50 whitespace-nowrap"
                 style={{
                   background: "transparent",
                   color: "white",
@@ -474,27 +463,33 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
                 title="メッセージを送信">
                 <span style={{ color: "white" }}>送信</span>
                 <Send
-                  className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform"
+                  className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                   style={{ color: "white" }}
                 />
               </button>
 
-              {/* Optimize Button */}
+              {/* Optimize Button - Touch optimized */}
               <button
-                className="px-4 py-1.5 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0 border border-white/50 disabled:opacity-50"
+                className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl font-medium hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 group flex-shrink-0 border border-white/50 disabled:opacity-50 whitespace-nowrap"
                 style={{
                   background: "transparent",
                   color: "white",
                 }}
                 onClick={handleOptimizePrompt}
-                disabled={!value.trim() || isOptimizing}
-                title="プロンプトを最適化">
+                disabled={!value.trim() || isOptimizing || !openRouterApiKey}
+                title={openRouterApiKey ? "プロンプトを最適化" : "APIキーが設定されていません"}
+              >
                 <span style={{ color: "white" }}>{isOptimizing ? "最適化中..." : "最適化"}</span>
                 <Sparkles
-                  className={`w-3.5 h-3.5 ${isOptimizing ? "animate-pulse" : ""}`}
+                  className={`w-4 h-4 ${isOptimizing ? "animate-pulse" : ""}`}
                   style={{ color: "white" }}
                 />
               </button>
+
+              {/* 小さなヒント: APIキー未設定時 */}
+              {!openRouterApiKey && (
+                <div className="text-[11px] text-gray-400 mt-1 text-center">APIキーが設定されていません。設定で入力してください。</div>
+              )}
             </div>
           </div>
 
@@ -511,8 +506,11 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
       {deleteConfirmOpen && deletingPrompt && (
         <Dialog.Root open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
           <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[200]" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-md p-6 w-80 z-[210]">
+            <Dialog.Overlay className={cn("fixed inset-0 bg-black/50", zIndex('MODAL_BACKDROP'))} />
+            <Dialog.Content className={cn(
+              "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 border border-gray-600 rounded-md p-6 w-80",
+              zIndex('MODAL_CONTENT')
+            )}>
               <Dialog.Title className="text-lg font-semibold mb-4">削除確認</Dialog.Title>
               <p className="text-sm text-gray-300 mb-4">
                 「{deletingPrompt.title}」を削除しますか？

@@ -2,18 +2,82 @@
 @tailwind components;
 @tailwind utilities;
 @reference utilities;
+@import './components/SimpleMobileLayout.css';
+@import './components/iOSSafariKeyboardFix.css';
+
+/* Safari-specific fixes for mobile layout */
+@supports (-webkit-touch-callout: none) {
+
+  /* iOS Safari specific styles */
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Ensure proper viewport height on iOS */
+  .h-screen {
+    height: 100vh;
+    height: -webkit-fill-available;
+  }
+
+  .h-dvh {
+    height: 100vh;
+    height: 100dvh;
+    height: -webkit-fill-available;
+  }
+
+  /* Fix for sticky positioning on iOS */
+  [style*="position: sticky"] {
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+
+  /* Improve scrolling performance */
+  [style*="overflow: auto"],
+  [style*="overflow-y: auto"] {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fix for backdrop filter on iOS */
+  .backdrop-blur-xl,
+  .backdrop-blur-2xl {
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+}
+
+/* Prevent iOS Safari from auto-zooming small text and inputs */
+html,
+body {
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+/* Ensure inputs and buttons don't trigger zoom by keeping font-size >= 16px on mobile */
+@media (max-width: 768px) {
+
+  input,
+  textarea,
+  button,
+  .w-full,
+  .glass,
+  .glass-dark {
+    font-size: 16px !important;
+  }
+}
 
 /* Broadcast button styles removed - now integrated in component */
 
 /* @theme セクションを削除 - 重複の原因 */
 
 @layer base {
-:root {
-  --sidebar-bg: linear-gradient(135deg, rgba(147, 51, 234, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%);
-  --sidebar-button-active: rgba(255, 255, 255, 0.1);
-  --sidebar-button-inactive: rgba(255, 255, 255, 0.05);
-  --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  :root {
+    --sidebar-bg: linear-gradient(135deg, rgba(147, 51, 234, 0.9) 0%, rgba(0, 0, 0, 0.9) 100%);
+    --sidebar-button-active: rgba(255, 255, 255, 0.1);
+    --sidebar-button-inactive: rgba(255, 255, 255, 0.05);
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
     --popover: 0 0% 100%;
@@ -105,6 +169,7 @@
   * {
     border-color: hsl(var(--border));
   }
+
   body {
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     color: hsl(var(--foreground));
@@ -115,19 +180,25 @@
 
 /* Custom Animations */
 @keyframes wave {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
   }
+
   50% {
     transform: translateY(-10px);
   }
 }
 
 @keyframes pulse-dot {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.4;
     transform: scale(1);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.2);
@@ -135,12 +206,16 @@
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0) translateX(0) scale(1);
   }
+
   25% {
     transform: translateY(-2px) translateX(1px) scale(1);
   }
+
   75% {
     transform: translateY(2px) translateX(-1px) scale(1);
   }
@@ -200,7 +275,9 @@
   justify-content: center;
   flex-shrink: 0;
 }
+
 @layer components {
+
   /* Universal rounded corners and borders */
   button {
     border-radius: 0.75rem !important;
@@ -213,30 +290,38 @@
     transform: translateY(-1px);
   }
 
-  input, textarea, select {
+  input,
+  textarea,
+  select {
     border-radius: 0.75rem !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     transition: all 200ms;
   }
 
-  input:focus, textarea:focus, select:focus {
+  input:focus,
+  textarea:focus,
+  select:focus {
     border-color: rgba(147, 51, 234, 0.5) !important;
     outline: none !important;
   }
 
   /* Modal and dialog rounded corners */
-  [role="dialog"], [data-radix-portal] > div {
+  [role="dialog"],
+  [data-radix-portal]>div {
     border-radius: 1rem !important;
   }
 
   /* Card and panel rounded corners */
-  .glass, .glass-dark, .glass-card {
+  .glass,
+  .glass-dark,
+  .glass-card {
     border-radius: 1rem !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
   }
 
   /* Dropdown and popover rounded corners */
-  [data-radix-popper-content-wrapper], [data-radix-select-content] {
+  [data-radix-popper-content-wrapper],
+  [data-radix-select-content] {
     border-radius: 0.75rem !important;
   }
 
@@ -269,9 +354,12 @@
   /* Simple gradient avatars without borders */
   .avatar-ai {
     background: var(--gradient-secondary);
-    width: 1.5rem; /* w-6 */
-    height: 1.5rem; /* h-6 */
-    border-radius: 9999px; /* rounded-full */
+    width: 1.5rem;
+    /* w-6 */
+    height: 1.5rem;
+    /* h-6 */
+    border-radius: 9999px;
+    /* rounded-full */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -280,18 +368,20 @@
   /* Message action buttons without white backgrounds */
   .message-action-btn {
     /* replaced @apply with explicit styles */
-    padding: 0.375rem; /* p-1.5 */
+    padding: 0.375rem;
+    /* p-1.5 */
     transition: all 150ms;
     background: transparent;
   }
 
   .message-action-btn:hover {
-    filter: brightness(1.3) drop-shadow(0 0 8px rgba(255,255,255,0.3));
+    filter: brightness(1.3) drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
   }
 }
 
 /* Utility Classes */
 @layer utilities {
+
   /* Enhanced Glass Morphism */
   .glass {
     backdrop-filter: blur(20px) saturate(180%);
@@ -420,8 +510,10 @@
   }
 
   .scrollbar-hide {
-    -ms-overflow-style: none; /* Internet Explorer 10+ */
-    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none;
+    /* Internet Explorer 10+ */
+    scrollbar-width: none;
+    /* Firefox */
   }
 
   /* Hover lift effect */
@@ -490,7 +582,7 @@
   /* Hover glow purple effect */
   .hover-glow-purple:hover {
     box-shadow: 0 0 20px rgba(147, 51, 234, 0.3),
-                0 0 40px rgba(147, 51, 234, 0.2);
+      0 0 40px rgba(147, 51, 234, 0.2);
     background: rgba(147, 51, 234, 0.1);
   }
 
@@ -518,18 +610,28 @@
 
 /* Enhanced Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(102, 126, 234, 0.5),
-               0 0 40px rgba(102, 126, 234, 0.3);
+      0 0 40px rgba(102, 126, 234, 0.3);
   }
+
   50% {
     box-shadow: 0 0 30px rgba(102, 126, 234, 0.8),
-               0 0 60px rgba(102, 126, 234, 0.4);
+      0 0 60px rgba(102, 126, 234, 0.4);
   }
 }
 
@@ -538,6 +640,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -545,14 +648,20 @@
 }
 
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
+  }
 }
 
 @keyframes pulse-ring {
   0% {
     box-shadow: 0 0 0 0 rgba(167, 85, 247, 0.5);
   }
+
   100% {
     box-shadow: 0 0 0 20px rgba(167, 85, 247, 0);
   }
@@ -563,6 +672,7 @@
     transform: translateY(100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -573,36 +683,47 @@
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
 @keyframes float {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translate(0, 0) rotate(0deg);
   }
+
   33% {
     transform: translate(30px, -30px) rotate(120deg);
   }
+
   66% {
     transform: translate(-20px, 20px) rotate(240deg);
   }
 }
 
 @keyframes glow-pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
   }
+
   50% {
     box-shadow: 0 0 40px rgba(102, 126, 234, 0.8);
   }
 }
 
 @keyframes pulse-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
   }
+
   50% {
     box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
   }
@@ -612,9 +733,11 @@
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
@@ -624,19 +747,25 @@
   0% {
     background-position: 0% 50%;
   }
+
   50% {
     background-position: 100% 50%;
   }
+
   100% {
     background-position: 0% 50%;
   }
 }
 
 @keyframes typing-dot {
-  0%, 60%, 100% {
+
+  0%,
+  60%,
+  100% {
     opacity: 0.3;
     transform: translateY(0);
   }
+
   30% {
     opacity: 1;
     transform: translateY(-10px);
@@ -664,9 +793,12 @@
 }
 
 @keyframes glow {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.4;
   }
+
   50% {
     opacity: 0.6;
   }
@@ -686,12 +818,10 @@
 }
 
 .animate-shimmer {
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255,255,255,0.1) 50%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite;
 }
@@ -704,90 +834,90 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-  .hover-glow-purple:hover {
-    box-shadow:
-      0 0 20px rgba(167, 85, 247, 0.3),
-      0 0 40px rgba(167, 85, 247, 0.2),
-      0 0 60px rgba(167, 85, 247, 0.1);
-    transform: translateY(-2px);
-  }
+.hover-glow-purple:hover {
+  box-shadow:
+    0 0 20px rgba(167, 85, 247, 0.3),
+    0 0 40px rgba(167, 85, 247, 0.2),
+    0 0 60px rgba(167, 85, 247, 0.1);
+  transform: translateY(-2px);
+}
 
-  /* Soft Header Styles */
-  .header-container {
-    border-radius: 16px 16px 0 0;
-    overflow: hidden;
-  }
+/* Soft Header Styles */
+.header-container {
+  border-radius: 16px 16px 0 0;
+  overflow: hidden;
+}
 
-  .header-button {
-    border-radius: 12px;
-    padding: 8px 16px;
-    margin: 0 4px;
-    border: 1px solid var(--glass-border);
-    background: var(--gradient-primary);
-    color: #2c3e50;
-    transition: all 0.2s ease;
-  }
+.header-button {
+  border-radius: 12px;
+  padding: 8px 16px;
+  margin: 0 4px;
+  border: 1px solid var(--glass-border);
+  background: var(--gradient-primary);
+  color: #2c3e50;
+  transition: all 0.2s ease;
+}
 
-  .header-button:hover {
-    background: linear-gradient(135deg, #a855f7 0%, #f472b6 100%);
-    transform: scale(1.05);
-  }
+.header-button:hover {
+  background: linear-gradient(135deg, #a855f7 0%, #f472b6 100%);
+  transform: scale(1.05);
+}
 
-  .header-button.active {
-    background: rgba(255, 215, 0, 0.2);
-    border-radius: 12px;
-  }
+.header-button.active {
+  background: rgba(255, 215, 0, 0.2);
+  border-radius: 12px;
+}
 
-  /* Right Panel Soft Styles */
-  .right-panel {
-    border-radius: 16px 0 0 16px;
-    overflow: hidden;
-  }
+/* Right Panel Soft Styles */
+.right-panel {
+  border-radius: 16px 0 0 16px;
+  overflow: hidden;
+}
 
-  .tab-button {
-    border-radius: 12px;
-    margin: 4px;
-    padding: 6px 12px;
-  }
+.tab-button {
+  border-radius: 12px;
+  margin: 4px;
+  padding: 6px 12px;
+}
 
-  .chat-item,
-  .favorite-item {
-    border-radius: 12px;
-    margin: 6px 0;
-    padding: 10px;
-  }
+.chat-item,
+.favorite-item {
+  border-radius: 12px;
+  margin: 6px 0;
+  padding: 10px;
+}
 
-  /* Special Favorite Button */
-  .favorite-button {
-    background: linear-gradient(135deg, #ff9a9e, #fad0c4) !important;
-    color: #2c3e50 !important;
-  }
+/* Special Favorite Button */
+.favorite-button {
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4) !important;
+  color: #2c3e50 !important;
+}
 
 
-  /* Removed button overrides */
+/* Removed button overrides */
 
-  /* Apply lighter color for better visibility */
-  aside .glass-dark {
-    background: rgba(55, 55, 75, 0.9) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    backdrop-filter: blur(10px) !important;
-  }
+/* Apply lighter color for better visibility */
+aside .glass-dark {
+  background: rgba(55, 55, 75, 0.9) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(10px) !important;
+}
 
-  /* 具体的なパネルセレクター */
-  .chat-container .glass-dark,
-  .message-panel .glass-dark,
-  .sidebar .glass-dark,
-  .bottom-panel .glass-dark {
-    background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
-  }
+/* 具体的なパネルセレクター */
+.chat-container .glass-dark,
+.message-panel .glass-dark,
+.sidebar .glass-dark,
+.bottom-panel .glass-dark {
+  background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+}
 
-  /* Remove global button styles that break functionality */
+/* Remove global button styles that break functionality */
 
-  /* 入力欄の濃い色をキープ */
-  .chat-input-container .glass-dark {
-    background: linear-gradient(135deg, #0a061f 0%, #1e1a40 50%, #161228 100%) !important;
-  }
+/* 入力欄の濃い色をキープ */
+.chat-input-container .glass-dark {
+  background: linear-gradient(135deg, #0a061f 0%, #1e1a40 50%, #161228 100%) !important;
+}
 
 
 /* Enhanced UI polish to match target screenshot */
@@ -806,49 +936,47 @@
   position: absolute;
   inset: 0;
   background-image:
-    repeating-linear-gradient(
-      45deg,
+    repeating-linear-gradient(45deg,
       transparent,
       transparent 100px,
       rgba(255, 255, 255, 0.01) 100px,
-      rgba(255, 255, 255, 0.01) 200px
-    );
+      rgba(255, 255, 255, 0.01) 200px);
   pointer-events: none;
 }
 
 .panel-header-gradient {
   background: linear-gradient(135deg,
-    rgba(147, 51, 234, 0.2) 0%,
-    rgba(236, 72, 153, 0.2) 50%,
-    rgba(244, 63, 94, 0.2) 100%);
+      rgba(147, 51, 234, 0.2) 0%,
+      rgba(236, 72, 153, 0.2) 50%,
+      rgba(244, 63, 94, 0.2) 100%);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .panel-card-gradient {
   background: linear-gradient(135deg,
-    rgba(147, 51, 234, 0.1) 0%,
-    rgba(236, 72, 153, 0.05) 100%);
+      rgba(147, 51, 234, 0.1) 0%,
+      rgba(236, 72, 153, 0.05) 100%);
 }
 
 .panel-card-shadow {
   box-shadow: 0 10px 40px rgba(102, 126, 234, 0.1),
-              0 2px 10px rgba(0, 0, 0, 0.2),
-              inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 2px 10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .panel-selected {
   border: 1px solid rgba(102, 126, 234, 0.3) !important;
   box-shadow: 0 0 30px rgba(102, 126, 234, 0.2),
-              0 10px 40px rgba(102, 126, 234, 0.15) !important;
+    0 10px 40px rgba(102, 126, 234, 0.15) !important;
 }
 
 .bottom-input-pill {
   margin: 12px 24px;
   padding: 12px 18px;
   border-radius: 20px;
-  background: linear-gradient(180deg, rgba(147,51,234,0.08), rgba(236,72,153,0.05));
-  border: 1px solid rgba(147,51,234,0.15);
+  background: linear-gradient(180deg, rgba(147, 51, 234, 0.08), rgba(236, 72, 153, 0.05));
+  border: 1px solid rgba(147, 51, 234, 0.15);
   display: flex;
   gap: 12px;
   align-items: center;
@@ -865,8 +993,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg,#ffb86b,#ff6bcb);
-  box-shadow: 0 6px 18px rgba(167,139,250,0.12), inset 0 -2px 8px rgba(255,255,255,0.06);
+  background: linear-gradient(135deg, #ffb86b, #ff6bcb);
+  box-shadow: 0 6px 18px rgba(167, 139, 250, 0.12), inset 0 -2px 8px rgba(255, 255, 255, 0.06);
 }
 
 /* Typing Indicator */
@@ -896,141 +1024,141 @@
 }
 
 /* Enhanced Button Styles */
-  .btn-gradient-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: 8px;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-  }
+.btn-gradient-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: 8px;
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
 
-  .btn-gradient-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
-  }
+.btn-gradient-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(102, 126, 234, 0.6);
+}
 
-  /* Gradient Primary */
-  .gradient-primary {
-    background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
-  }
+/* Gradient Primary */
+.gradient-primary {
+  background: linear-gradient(135deg, #9333ea 0%, #ec4899 100%);
+}
 
-  /* Force white text in input areas */
-  .glass-dark textarea {
-    color: #ffffff !important;
-  }
+/* Force white text in input areas */
+.glass-dark textarea {
+  color: #ffffff !important;
+}
 
-  .glass-dark input {
-    color: #ffffff !important;
-  }
-
-
+.glass-dark input {
+  color: #ffffff !important;
+}
 
 
 
-  /* Remove problematic button override that breaks functionality */
-  /* Button styles should be applied via classes, not global CSS */
 
-  /* 強制的なボーダーとヘッダー調整 - 最強のセレクタ */
-  html body div .glass-dark,
-  html body div .glass-dark.border-r,
-  html body div .glass-dark.border-b,
-  html body div .glass-dark.border-t,
-  html body div .glass-dark.border-l,
-  html body div .glass-dark.border,
-  html body main .glass-dark,
-  html body aside .glass-dark {
-    border-width: 0.5px !important;
-    border-style: solid !important;
-    border-color: rgba(255, 255, 255, 0.02) !important;
-  }
 
-  /* すべての要素に適用するのは削除 - 太くなりすぎるため */
+/* Remove problematic button override that breaks functionality */
+/* Button styles should be applied via classes, not global CSS */
 
-  html body .header-container {
-    width: auto !important;
-    min-width: unset !important;
-    max-width: 100% !important;
-    flex-shrink: 1 !important;
-  }
+/* 強制的なボーダーとヘッダー調整 - 最強のセレクタ */
+html body div .glass-dark,
+html body div .glass-dark.border-r,
+html body div .glass-dark.border-b,
+html body div .glass-dark.border-t,
+html body div .glass-dark.border-l,
+html body div .glass-dark.border,
+html body main .glass-dark,
+html body aside .glass-dark {
+  border-width: 0.5px !important;
+  border-style: solid !important;
+  border-color: rgba(255, 255, 255, 0.02) !important;
+}
 
-  /* Removed conflicting header styles - defined later in the file */
+/* すべての要素に適用するのは削除 - 太くなりすぎるため */
 
-  /* ヘッダーのテキストサイズを小さく */
-  html body header h2,
-  html body header .text-lg {
-    font-size: 0.875rem !important;
-    line-height: 1.25rem !important;
-  }
+html body .header-container {
+  width: auto !important;
+  min-width: unset !important;
+  max-width: 100% !important;
+  flex-shrink: 1 !important;
+}
 
-  html body .header-button {
-    padding: 0.25rem 0.5rem !important;
-    font-size: 0.875rem !important;
-  }
+/* Removed conflicting header styles - defined later in the file */
 
-  /* Tailwindクラスを上書き - より強力なセレクタ */
-  html body div .border-r,
-  html body main .border-r,
-  html body aside .border-r {
-    border-right-width: 0.5px !important;
-    border-color: rgba(255, 255, 255, 0.02) !important;
-  }
+/* ヘッダーのテキストサイズを小さく */
+html body header h2,
+html body header .text-lg {
+  font-size: 0.875rem !important;
+  line-height: 1.25rem !important;
+}
 
-  html body div .border-b,
-  html body main .border-b,
-  html body aside .border-b {
-    border-bottom-width: 0.5px !important;
-    border-color: rgba(255, 255, 255, 0.02) !important;
-  }
+html body .header-button {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.875rem !important;
+}
 
-  html body div .border-t,
-  html body main .border-t,
-  html body aside .border-t {
-    border-top-width: 0.5px !important;
-    border-color: rgba(255, 255, 255, 0.02) !important;
-  }
+/* Tailwindクラスを上書き - より強力なセレクタ */
+html body div .border-r,
+html body main .border-r,
+html body aside .border-r {
+  border-right-width: 0.5px !important;
+  border-color: rgba(255, 255, 255, 0.02) !important;
+}
 
-  html body div .border-l,
-  html body main .border-l,
-  html body aside .border-l {
-    border-left-width: 0.5px !important;
-    border-color: rgba(255, 255, 255, 0.02) !important;
-  }
+html body div .border-b,
+html body main .border-b,
+html body aside .border-b {
+  border-bottom-width: 0.5px !important;
+  border-color: rgba(255, 255, 255, 0.02) !important;
+}
 
-  html body div .border,
-  html body main .border,
-  html body aside .border {
-    border-width: 0.5px !important;
-    border-color: rgba(255, 255, 255, 0.02) !important;
-  }
+html body div .border-t,
+html body main .border-t,
+html body aside .border-t {
+  border-top-width: 0.5px !important;
+  border-color: rgba(255, 255, 255, 0.02) !important;
+}
 
-  html body div .border-white\/5,
-  html body main .border-white\/5,
-  html body aside .border-white\/5 {
-    border-color: rgba(255, 255, 255, 0.02) !important;
-  }
+html body div .border-l,
+html body main .border-l,
+html body aside .border-l {
+  border-left-width: 0.5px !important;
+  border-color: rgba(255, 255, 255, 0.02) !important;
+}
 
-  /* Button Hover Effect */
-  html body .glass-dark button:hover {
-    border-color: rgba(255, 255, 255, 0.3) !important;
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-  }
+html body div .border,
+html body main .border,
+html body aside .border {
+  border-width: 0.5px !important;
+  border-color: rgba(255, 255, 255, 0.02) !important;
+}
 
-  /* Header button adjustments */
-  html body header button {
-    padding: 0.125rem 0.25rem !important;
-    font-size: 0.75rem !important;
-    border-radius: 6px !important;
-    min-height: 1.5rem !important;
-    min-width: 1.5rem !important;
-  }
+html body div .border-white\/5,
+html body main .border-white\/5,
+html body aside .border-white\/5 {
+  border-color: rgba(255, 255, 255, 0.02) !important;
+}
 
-  html body header button svg {
-    width: 0.875rem !important;
-    height: 0.875rem !important;
-  }
+/* Button Hover Effect */
+html body .glass-dark button:hover {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+}
+
+/* Header button adjustments */
+html body header button {
+  padding: 0.125rem 0.25rem !important;
+  font-size: 0.75rem !important;
+  border-radius: 6px !important;
+  min-height: 1.5rem !important;
+  min-width: 1.5rem !important;
+}
+
+html body header button svg {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+}
 
 .btn-gradient-secondary {
   background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -1058,7 +1186,8 @@
 
 /* Sidebar adjustments */
 .sidebar-wide {
-  width: 24rem; /* matches w-96 */
+  width: 24rem;
+  /* matches w-96 */
   padding-left: 1.5rem;
   padding-right: 1.5rem;
 }
@@ -1071,12 +1200,12 @@
 
 /* Panel visuals */
 .panel-card-shadow {
-  box-shadow: 0 12px 30px rgba(2,6,23,0.6), 0 0 30px rgba(102,126,234,0.06);
+  box-shadow: 0 12px 30px rgba(2, 6, 23, 0.6), 0 0 30px rgba(102, 126, 234, 0.06);
 }
 
 .panel-selected {
-  box-shadow: 0 0 40px rgba(167,85,247,0.22), 0 12px 30px rgba(2,6,23,0.6);
-  border: 1px solid rgba(167,85,247,0.14);
+  box-shadow: 0 0 40px rgba(167, 85, 247, 0.22), 0 12px 30px rgba(2, 6, 23, 0.6);
+  border: 1px solid rgba(167, 85, 247, 0.14);
 }
 
 .panel-header-gradient::after {
@@ -1104,15 +1233,15 @@
 /* Make history/favorite cards slightly darker to increase contrast */
 .chat-item,
 .favorite-item {
-  background: rgba(0,0,0,0.45) !important;
-  border: 1px solid rgba(255,255,255,0.06) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Ensure computed background for glass doesn't wash out text in these panels */
 .message-panel .glass,
 .chat-item .glass,
 .favorite-item .glass {
-  background: rgba(0,0,0,0.45) !important;
+  background: rgba(0, 0, 0, 0.45) !important;
   backdrop-filter: blur(8px) !important;
 }
 
@@ -1122,12 +1251,14 @@
 
 /* Panel grid & spacing tweaks */
 main .grid.gap-4 {
-  gap: 1.5rem; /* increase space between panels */
+  gap: 1.5rem;
+  /* increase space between panels */
 }
 
 /* Panel card inner padding to give messages breathing room */
 .glass-dark.rounded-2xl {
-  padding: 0.75rem; /* ensure consistent inner spacing */
+  padding: 0.75rem;
+  /* ensure consistent inner spacing */
 }
 
 /* Removed duplicate header sizing - defined later */
@@ -1139,13 +1270,14 @@ main .grid.gap-4 {
   line-height: 1.4;
   border-radius: 1rem;
   padding: 0.75rem 1rem;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 .speech-bubble-ai {
-  background: rgba(20, 20, 24, 0.95) !important; /* darker, nearly-opaque */
+  background: rgba(20, 20, 24, 0.95) !important;
+  /* darker, nearly-opaque */
   color: #fff !important;
-  border: 1px solid rgba(255,255,255,0.03);
+  border: 1px solid rgba(255, 255, 255, 0.03);
 }
 
 .speech-bubble-user {
@@ -1181,6 +1313,7 @@ header .p-1.5 {
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
+
   /* Stack panels in single column on small screens */
   main .grid.gap-4 {
     grid-template-columns: 1fr !important;
@@ -1225,22 +1358,26 @@ html body {
 
 /* Make app shell darker and simpler */
 .app-shell-bg {
-  background: linear-gradient(135deg, rgba(15,16,20,1) 0%, rgba(20,18,28,1) 100%) !important;
+  background: linear-gradient(135deg, rgba(15, 16, 20, 1) 0%, rgba(20, 18, 28, 1) 100%) !important;
 }
 
 /* Soften primary gradients */
 .gradient-primary,
 .bg-gradient-primary {
-  background: linear-gradient(135deg, rgba(102,126,234,0.25) 0%, rgba(118,75,162,0.25) 100%) !important;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%) !important;
 }
 
 .gradient-secondary,
 .bg-gradient-secondary {
-  background: linear-gradient(135deg, rgba(236,72,153,0.2) 0%, rgba(244,63,94,0.15) 100%) !important;
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.2) 0%, rgba(244, 63, 94, 0.15) 100%) !important;
 }
 
 /* Reduce strong shadows and glows */
-.glow, .glow-hover, .hover-glow-purple, .shadow-glow, .pulse-glow {
+.glow,
+.glow-hover,
+.hover-glow-purple,
+.shadow-glow,
+.pulse-glow {
   box-shadow: none !important;
 }
 
@@ -1249,19 +1386,23 @@ html body {
   transition-duration: 120ms !important;
   transition-timing-function: ease !important;
 }
+
 @media (prefers-reduced-motion: reduce) {
-  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; }
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /* Improve bubble contrast and legibility */
 .speech-bubble-ai {
-  background: rgba(8,9,12,0.92) !important;
+  background: rgba(8, 9, 12, 0.92) !important;
   color: var(--accessible-text) !important;
-  border: 1px solid rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 .speech-bubble-user {
-  background: linear-gradient(135deg, rgba(91,54,200,0.9) 0%, rgba(139,92,246,0.9) 100%) !important;
+  background: linear-gradient(135deg, rgba(91, 54, 200, 0.9) 0%, rgba(139, 92, 246, 0.9) 100%) !important;
   color: #ffffff !important;
 }
 
@@ -1279,93 +1420,243 @@ header.glass-dark {
 /* Make input area less bright and buttons more visible */
 .bottom-input-pill .input-area textarea,
 .bottom-input-pill input[type="text"] {
-  background: rgba(255,255,255,0.03) !important;
+  background: rgba(255, 255, 255, 0.03) !important;
   color: var(--accessible-text) !important;
-  border: 1px solid rgba(255,255,255,0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.04) !important;
 }
 
 .btn-gradient-primary,
 button.px-4.py-2 {
-  background: linear-gradient(135deg, rgba(107,74,203,1) 0%, rgba(156,109,243,1) 100%) !important;
+  background: linear-gradient(135deg, rgba(107, 74, 203, 1) 0%, rgba(156, 109, 243, 1) 100%) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(255,255,255,0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Increase contrast of small interactive icons */
-header button svg, .avatar-ai span, .message-action-btn svg {
+header button svg,
+.avatar-ai span,
+.message-action-btn svg {
   color: var(--accessible-text) !important;
 }
 
 /* Slightly larger text for better readability */
-body, button, input, textarea, select {
+body,
+button,
+input,
+textarea,
+select {
   font-size: 1rem !important;
 }
 
 /* Tweak responsive paddings for mobile comfort */
 @media (max-width: 768px) {
-  .glass-dark.rounded-2xl { padding: 0.6rem !important; }
-  /* Mobile header padding now using main definition */
-  .bottom-input-pill { margin: 10px !important; padding: 10px !important; }
+  .glass-dark.rounded-2xl {
+    padding: 0.6rem !important;
+  }
+
+  /* Improve input area sizing on mobile */
+  .bottom-input-pill {
+    margin: 10px !important;
+    padding: 12px !important;
+    min-height: 60px !important;
+  }
+
+  /* Ensure textarea is visible and usable */
+  .bottom-input-pill textarea,
+  textarea,
+  input[type="text"] {
+    min-height: 40px !important;
+    font-size: 16px !important;
+    /* Prevent iOS zoom */
+    line-height: 1.5 !important;
+    -webkit-appearance: none !important;
+    -webkit-border-radius: 0 !important;
+  }
+
+  /* Disable Safari input accessories */
+  input::-webkit-outer-spin-button,
+  input::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+  }
 }
 
 /* End low-eye-strain overrides */
 
-/* ===== FIXED LAYOUT SYSTEM ===== */
-/* Reset browser defaults for fixed positioning */
-body, html {
-  margin: 0 !important;
-  padding: 0 !important;
+/* ===== MOBILE-FIRST LAYOUT SYSTEM ===== */
+/* CSS Variables for dynamic viewport */
+:root {
+  --vh: 1vh;
+  --keyboard-height: 0px;
 }
 
-/* Fixed header/footer layout support */
-.h-screen {
+/* Base mobile layout */
+html {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  position: fixed;
+  touch-action: pan-y;
+}
+
+/* Mobile-optimized app container */
+.app-container,
+.app-shell-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  max-width: 100vw;
   height: 100vh;
-  height: 100dvh; /* Mobile viewport units for better mobile support */
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .layout-header {
+  position: sticky;
+  top: 0;
+  flex-shrink: 0;
   height: 60px;
+  min-height: 60px;
+  width: 100%;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 100;
+  background: rgba(31, 41, 55, 0.98);
 }
 
-.layout-footer {
-  height: 80px;
+.layout-footer,
+.broadcast-input-container {
+  position: sticky;
+  bottom: 0;
+  flex-shrink: 0;
+  height: 100px;
+  min-height: 100px;
+  width: 100%;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 100;
+  background: rgba(31, 41, 55, 0.98);
 }
 
 .layout-main {
-  height: calc(100vh - 140px); /* Total height minus header + footer */
-  height: calc(100dvh - 140px); /* Mobile viewport support */
-  overflow: hidden; /* Prevent scrolling at main level */
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  min-height: 0;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Mobile-first responsive design */
-@media (max-width: 768px) {
-  .layout-header {
-    height: 56px; /* Slightly smaller on mobile */
-    padding: 0.5rem 0.75rem;
+/* iPhone specific optimizations */
+@media screen and (max-width: 768px) {
+
+  /* Prevent horizontal scroll */
+  html,
+  body {
+    max-width: 100vw;
+    overflow-x: hidden;
   }
 
-  .layout-footer {
-    height: 72px; /* Slightly smaller on mobile */
-  }
-
-  .layout-main {
-    height: calc(100vh - 128px);
-    height: calc(100dvh - 128px);
-  }
-
-  /* Ensure sidebar slides properly on mobile */
-  aside {
-    position: fixed !important;
-    top: 56px;
+  /* Fixed container for mobile */
+  .app-container,
+  .app-shell-bg {
+    position: fixed;
+    top: 0;
     left: 0;
-    bottom: 72px;
-    z-index: 30;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    max-width: 100vw;
+    overflow: hidden;
+  }
+
+  /* Fixed header for mobile */
+  .mobile-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    height: 56px;
+    z-index: 100;
+    background: rgba(31, 41, 55, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-sizing: border-box;
+  }
+
+  /* Fixed footer for mobile */
+  .mobile-footer {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    min-height: 80px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+    z-index: 100;
+    background: rgba(31, 41, 55, 0.98);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-sizing: border-box;
+  }
+
+  /* Scrollable main content for mobile */
+  .mobile-main {
+    position: fixed;
+    top: 56px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100vw;
+    max-width: 100vw;
+    padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+    box-sizing: border-box;
+  }
+
+  /* Mobile-friendly input */
+  .broadcast-input-container input,
+  .broadcast-input-container textarea {
+    font-size: 16px;
+    -webkit-appearance: none;
+  }
+
+  /* Mobile sidebar as overlay */
+  aside {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    max-width: 85vw;
+    z-index: 200;
     transform: translateX(-100%);
     transition: transform 0.3s ease-in-out;
   }
@@ -1373,14 +1664,75 @@ body, html {
   aside.open {
     transform: translateX(0);
   }
+
+  /* Prevent content overflow */
+  .grid {
+    max-width: 100%;
+  }
+
+  /* Prevent horizontal scroll on panels */
+  [class*="rounded-2xl"] {
+    max-width: calc(100vw - 2rem);
+  }
 }
 
-/* Touch-friendly interactions */
-@media (hover: none) and (pointer: coarse) {
-  /* Touch device styles */
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+
+  /* iOS full screen */
+  html,
+  body {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .app-container,
+  .app-shell-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 100%;
+  }
+
+  /* iOS scroll optimization */
+  .chat-panels-container {
+    -webkit-overflow-scrolling: touch;
+    -webkit-transform: translateZ(0);
+  }
+
+  /* Prevent zoom on input focus */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+    -webkit-appearance: none;
+    border-radius: 0;
+  }
+
+  /* iOS button fixes */
   button {
-    min-height: 44px;
-    min-width: 44px;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-appearance: none;
+  }
+
+  /* Prevent iOS bounce */
+  body {
+    position: fixed;
+    overflow: hidden;
+  }
+}
+
+/* Touch-friendly interactions for iOS devices */
+@media (hover: none) and (pointer: coarse) {
+
+  /* iOS recommended touch target size */
+  button {
+    min-height: 44px !important;
+    min-width: 44px !important;
   }
 
   .chat-panel .message-action-btn {
@@ -1409,7 +1761,8 @@ body, html {
   -webkit-backdrop-filter: blur(20px) !important;
   border: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7) !important;
-  z-index: 10000 !important; /* Ensure modal appears above everything */
+  z-index: 10000 !important;
+  /* Ensure modal appears above everything */
 }
 
 /* Radix Select Content specific styling */
@@ -1509,9 +1862,17 @@ body, html {
   margin-top: 0;
 }
 
-.markdown-content h1 { font-size: 1.5rem; }
-.markdown-content h2 { font-size: 1.25rem; }
-.markdown-content h3 { font-size: 1.1rem; }
+.markdown-content h1 {
+  font-size: 1.5rem;
+}
+
+.markdown-content h2 {
+  font-size: 1.25rem;
+}
+
+.markdown-content h3 {
+  font-size: 1.1rem;
+}
 
 /* Lists */
 .markdown-content ul,
@@ -1525,8 +1886,8 @@ body, html {
   line-height: 1.5;
 }
 
-.markdown-content li > ul,
-.markdown-content li > ol {
+.markdown-content li>ul,
+.markdown-content li>ol {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
 }
@@ -1667,3 +2028,171 @@ body, html {
   font-weight: 500;
   margin-bottom: -0.125rem;
 }
+
+/* Safari-optimized header */
+header.glass-dark,
+.layout-header {
+  position: relative;
+  z-index: 50;
+  background: rgba(31, 41, 55, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  /* Hardware acceleration for Safari */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+footer.layout-footer {
+  position: fixed !important;
+  /* raise footer by half its height for "ビタ止め" positioning and account for visualViewport (keyboard) */
+  bottom: calc(var(--safe-bottom, env(safe-area-inset-bottom)) + var(--vv-offset, 0px) + 42px) !important;
+  left: 0;
+  right: 0;
+  height: calc(56px + var(--safe-bottom, env(safe-area-inset-bottom))) !important;
+  padding-bottom: var(--safe-bottom, env(safe-area-inset-bottom)) !important;
+  box-sizing: border-box !important;
+  z-index: 1100 !important;
+  transform: none !important;
+}
+
+/* Mobile-optimized main content */
+.layout-main main {
+  width: 100%;
+  height: 100%;
+}
+
+/* Mobile chat panels container */
+.chat-panels-container {
+  width: 100%;
+  padding: 1rem;
+  padding-bottom: 2rem;
+}
+
+/* If any ancestor has transform, fixed positioning can break; force root containers to not create stacking context */
+html,
+body,
+#__next {
+  transform: none !important;
+}
+
+/* Fallback for very tall header/footer issues on iPhone 15 Pro Max specifically */
+@media (min-width: 430px) and (min-height: 932px) and (orientation: portrait) {
+  header.glass-dark {
+    height: calc(64px + var(--safe-top, env(safe-area-inset-top))) !important;
+  }
+
+  footer.layout-footer {
+    height: calc(64px + var(--safe-bottom, env(safe-area-inset-bottom))) !important;
+  }
+
+  .layout-main {
+    padding-top: calc(64px + var(--safe-top, env(safe-area-inset-top))) !important;
+    padding-bottom: calc(64px + var(--safe-bottom, env(safe-area-inset-bottom))) !important;
+  }
+}
+
+/* Safari-optimized footer */
+.broadcast-input-container,
+footer.layout-footer {
+  position: relative;
+  z-index: 50;
+  background: rgba(31, 41, 55, 0.98);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.35);
+  /* Hardware acceleration for Safari */
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* When keyboard is visible */
+body.keyboard-visible .broadcast-input-container,
+body.keyboard-visible footer.layout-footer {
+  /* Transform will be applied by JavaScript */
+  transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+}
+
+/* Ensure main content doesn't sit behind the footer */
+.layout-main {
+  padding-bottom: calc(84px + var(--safe-bottom, 0px)) !important;
+  /* Maintain previous height behavior but avoid overlap on iOS */
+  height: auto !important;
+}
+
+/* Some devices require explicit safe area margin for the bottom input */
+.bottom-input-pill {
+  margin-bottom: calc(var(--safe-bottom, 0px) + 10px) !important;
+}
+
+/* iPhone 15 Pro Max 用: 動的 vh を設定するための JS フック用変数 */
+:root {
+  --vh: 1vh;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+
+/* JSで動的 vh を設定するスニペット（index.htmlかclient sideで実行） */
+/*
+(function setVh(){
+  const vh = window.innerHeight * 0.01;
+  document.documentElement.style.setProperty('--vh', `${vh}px`);
+})();
+window.addEventListener('resize', setVh);
+*/
+
+/* ヘッダー/フッターの揺れ（layout shift）抑制 */
+.layout-header,
+.layout-footer {
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  transition: none !important;
+  /* JSで制御する場合以外はアニメーションを無効 */
+}
+
+/* 固定ヘッダー/フッター位置に safe-area を適用 */
+.layout-header {
+  padding-top: calc(var(--safe-top) + 8px);
+}
+
+.layout-footer {
+  padding-bottom: calc(var(--safe-bottom) + 8px);
+}
+
+/* iPhone 15 Pro Max (大きめスクリーン) 向けの微調整 */
+@media (min-width: 430px) and (min-height: 932px) and (orientation: portrait) {
+  .layout-header {
+    height: 72px !important;
+  }
+
+  .layout-footer {
+    height: 84px !important;
+  }
+
+  .layout-main {
+    height: calc(var(--vh, 1vh) * 100 - 156px);
+  }
+}
+
+/* 左パネルの開閉が効かない問題を修正（タップ/クリックを確保） */
+aside {
+  z-index: 40 !important;
+  /* headerより上に出す */
+  pointer-events: auto !important;
+  /* タップを受け付ける */
+}
+
+aside.open {
+  transform: translateX(0) !important;
+  transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+/* サイドパネルのオーバーレイが他要素をブロックしている場合の修正 */
+.side-overlay {
+  z-index: 35 !important;
+  /* asideより下に表示 */
+}
+
+/* NOTE: Duplicate simple fixed header/footer blocks removed to avoid overriding
+   earlier, device-aware footer positioning (keeps "ビタ止め" and keyboard handling). */

@@ -41,6 +41,7 @@ export interface CustomPrompt {
   id: string;
   title: string;
   content: string;
+  description?: string;
   tags: string[];
   createdAt: Date;
   updatedAt: Date;
@@ -74,6 +75,14 @@ export interface PromptUsageHistoryItem {
   title: string;
   panelIds: string[];
   appliedAt: Date;
+}
+
+export interface ChatHistory {
+  id: string;
+  title: string;
+  timestamp: Date;
+  panels: ChatPanel[];
+  modelIds: Record<string, string>;
 }
 
 // Additional types for chat-store compatibility
@@ -111,6 +120,8 @@ export interface ChatState {
   openRouterApiKey?: string; // Will be migrated to settings.apiKeys
   // Favorites (user-saved messages)
   favorites: ChatMessage[];
+  // Chat histories storage
+  chatHistories: ChatHistory[];
 }
 
 export interface AppSettings {

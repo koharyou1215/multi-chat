@@ -93,3 +93,88 @@ export function throttle<T extends (...args: any[]) => any>(
     }
   };
 }
+
+/**
+ * Safari-specific utility functions
+ */
+export const SafariUtils = {
+  /**
+   * Check if running on Safari mobile
+   */
+  isSafariMobile: () => {
+    if (typeof window === 'undefined') return false;
+    const ua = window.navigator.userAgent;
+    return /Safari/.test(ua) && /Mobile/.test(ua) && !/Chrome/.test(ua);
+  },
+
+  /**
+   * Check if running on iPhone
+   */
+  isIPhone: () => {
+    if (typeof window === 'undefined') return false;
+    return /iPhone/.test(window.navigator.userAgent);
+  },
+
+  /**
+   * Get safe area insets
+   */
+  getSafeAreaInsets: () => {
+    if (typeof window === 'undefined') return { top: 0, bottom: 0 };
+
+    const style = getComputedStyle(document.documentElement);
+    return {
+      top: parseInt(style.getPropertyValue('env(safe-area-inset-top)') || '0'),
+      bottom: parseInt(style.getPropertyValue('env(safe-area-inset-bottom)') || '0'),
+    };
+  },
+
+  /**
+   * Prevent iOS zoom on input focus
+   */
+  preventZoom: (element: HTMLElement) => {
+    if (!SafariUtils.isSafariMobile()) return;
+
+    const style = element.style as CSSStyleDeclaration & {
+      webkitAppearance: string;
+      webkitTouchCallout: string;
+    };
+    style.fontSize = '16px';
+    style.webkitAppearance = 'none';
+    style.webkitTouchCallout = 'none';
+  },
+
+  /**
+   * Enable better text selection for contentEditable
+   */
+  enableTextSelection: (element: HTMLElement) => {
+    if (!SafariUtils.isSafariMobile()) return;
+
+    const style = element.style as CSSStyleDeclaration & {
+      webkitUserSelect: string;
+      webkitTouchCallout: string;
+    };
+    style.webkitUserSelect = 'text';
+    style.webkitTouchCallout = 'default';
+  },
+
+  /**
+   * Fix viewport height for Safari
+   */
+  fixViewportHeight: () => {
+    if (typeof window === 'undefined' || !SafariUtils.isSafariMobile()) return;
+
+    const setVH = () => {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    };
+
+    setVH();
+    window.addEventListener('resize', setVH);
+    window.addEventListener('orientationchange', setVH);
+
+    return () => {
+      window.removeEventListener('resize', setVH);
+      window.removeEventListener('orientationchange', setVH);
+    };
+  },
+};

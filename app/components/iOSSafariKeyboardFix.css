@@ -1,0 +1,64 @@
+/* iOS Safari キーボード問題修正用CSS */
+
+/* Safari Accessory Viewを非表示にする */
+@supports (-webkit-touch-callout: none) {
+  /* フォーム要素のスタイル統一 */
+  textarea,
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"] {
+    /* Safari固有の表示を無効化 */
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    appearance: none !important;
+
+    /* 角丸をリセット */
+    -webkit-border-radius: 0 !important;
+    border-radius: 0 !important;
+
+    /* フォントサイズを16px以上にして自動ズームを防ぐ */
+    font-size: 16px !important;
+
+    /* フォーカス時のスタイル */
+    outline: none !important;
+
+    /* テキスト選択を許可 */
+    -webkit-user-select: text !important;
+    user-select: text !important;
+  }
+
+  /* キーボード表示時のフッター調整 */
+  .keyboard-visible .mobile-footer {
+    position: fixed !important;
+    bottom: env(safe-area-inset-bottom, 0) !important;
+    transform: translateY(0) !important;
+    transition: transform 0.3s ease-out !important;
+  }
+
+  /* メインコンテンツのスクロール最適化 */
+  .mobile-main {
+    -webkit-overflow-scrolling: touch !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    overscroll-behavior-y: contain !important;
+    touch-action: pan-y !important;
+  }
+
+  /* サイドバーのタッチ最適化 */
+  aside {
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-y !important;
+  }
+
+  /* ビューポート高さの動的調整 */
+  :root {
+    --real-vh: 1vh;
+  }
+
+  .mobile-container {
+    height: calc(var(--real-vh, 1vh) * 100);
+  }
+}

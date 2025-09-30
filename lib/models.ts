@@ -37,12 +37,12 @@ export const availableModels: AIModel[] = [
     costPer1K: 60.0,
   },
   {
-    id: "anthropic/claude-sonnet-4",
-    name: "Claude Sonnet 4",
+    id: "anthropic/claude-sonnet-4.5",
+    name: "Claude Sonnet 4.5",
     group: "Anthropic (OpenRouter)",
-    description: "バランスの良いClaude",
+    description: "バランスの良いClaude - 4.5 アップデート",
     contextWindow: 200000,
-    costPer1K: 15.0,
+    costPer1K: 18.0,
   },
 
   // xAI (OpenRouter)
@@ -83,12 +83,12 @@ export const availableModels: AIModel[] = [
 
   // DeepSeek (OpenRouter)
   {
-    id: "deepseek/deepseek-v3.1-terminus",
-    name: "DeepSeek Chat Terminus",
+    id: "deepseek/deepseek-v3.2-exp",
+    name: "DeepSeek v3.2 Exp",
     group: "DeepSeek (OpenRouter)",
-    description: "DeepSeekの会話特化モデル",
-    contextWindow: 64000,
-    costPer1K: 0.55,
+    description: "DeepSeekの実験的最新版 v3.2",
+    contextWindow: 65536,
+    costPer1K: 0.6,
   },
   // Standard (OpenRouter)
   // Specialized (OpenRouter)

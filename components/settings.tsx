@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
-import { useAppStore } from "@/store/use-app-store";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
-import { X, Key, RefreshCw } from "lucide-react";
-import { validateApiKey as validateUtilsApiKey, cn } from "@/lib/utils";
+import { Input } from "./ui/input";
+import { Label } from "./ui/label";
+import { useAppStore } from "@/store/use-app-store";
+import { cn } from "@/lib/utils";
+import { zIndex } from "@/lib/z-index";
+import * as Dialog from "@radix-ui/react-dialog";
+import { X, Key, Sparkles, Save, RefreshCw } from "lucide-react";
 
 interface SettingsProps {
   open: boolean;
@@ -13,180 +16,193 @@ interface SettingsProps {
 }
 
 export function Settings({ open, onClose }: SettingsProps) {
-  const { openRouterApiKey, setApiKey, resetStore } = useAppStore();
-  const [inputKey, setInputKey] = useState(openRouterApiKey);
-  const [showConfirmReset, setShowConfirmReset] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
+  const store = useAppStore();
+  const openRouterApiKey = store.openRouterApiKey || store.apiKeys?.openRouter || store.apiKeys?.openrouter || "";
+  const geminiApiKey = store.apiKeys?.gemini || "";
+  const anthropicApiKey = store.apiKeys?.anthropic || "";
+  const panels = store.panels;
+  const savePanelData = store.savePanelData ?? (() => {});
+  const loadPanelData = store.loadPanelData ?? (() => {});
+  const resetPanels = store.resetPanels ?? (() => {});
 
-  const handleTestApiKey = async () => {
-    if (!inputKey.trim()) {
-      alert("APIキーを入力してください");
-      return;
+  const [tempOpenRouterKey, setTempOpenRouterKey] = useState(openRouterApiKey || "");
+  const [tempGeminiKey, setTempGeminiKey] = useState(geminiApiKey || "");
+  const [tempAnthropicKey, setTempAnthropicKey] = useState(anthropicApiKey || "");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setTempOpenRouterKey(openRouterApiKey || "");
+      setTempGeminiKey(geminiApiKey || "");
+      setTempAnthropicKey(anthropicApiKey || "");
     }
+  }, [open, openRouterApiKey, geminiApiKey, anthropicApiKey]);
 
-    setIsValidating(true);
-    try {
-      const { OpenRouterClient } = await import("@/lib/api/openrouter");
-      const client = new OpenRouterClient(inputKey);
-      const isValid = await client.validateApiKey();
+  const handleSave = async () => {
+    setIsSaving(true);
 
-      if (isValid) {
-        alert("APIキーの検証が成功しました");
-      } else {
-        alert("APIキーの検証に失敗しました。キーを確認してください。");
-      }
-    } catch (error) {
-      alert("APIキーの検証でエラーが発生しました。");
-    } finally {
-      setIsValidating(false);
-    }
-  };
+    // Save API keys via store.setApiKey
+    store.setApiKey && store.setApiKey("openrouter", tempOpenRouterKey);
+    store.setApiKey && store.setApiKey("gemini", tempGeminiKey);
+    store.setApiKey && store.setApiKey("anthropic", tempAnthropicKey);
 
-  const handleSaveApiKey = async () => {
-    // まず古いクライアントキャッシュをクリア
-    try {
-      const { OpenRouterClient } = await import("@/lib/api/openrouter");
-      const client = new OpenRouterClient(inputKey);
-      const isValid = await client.validateApiKey();
+    // Save panel data
+    savePanelData();
 
-      if (isValid) {
-        setApiKey(inputKey);
-        alert("APIキーが正常に設定されました");
-        // ページをリロードして新しいAPIキーを確実に使用する
-        window.location.reload();
-      } else {
-        alert("APIキーの検証に失敗しました。キーを確認してください。");
-      }
-    } catch (error) {
-      alert("APIキーの検証でエラーが発生しました。");
-    }
+    setTimeout(() => {
+      setIsSaving(false);
+      onClose();
+    }, 500);
   };
 
   const handleReset = () => {
-    resetStore();
-    setShowConfirmReset(false);
-    onClose();
+    if (confirm("すべての設定をリセットしますか？この操作は取り消せません。")) {
+      setTempOpenRouterKey("");
+      setTempGeminiKey("");
+      setTempAnthropicKey("");
+      // Reset API keys in the store
+      store.setApiKey && store.setApiKey("openrouter", "");
+      store.setApiKey && store.setApiKey("gemini", "");
+      store.setApiKey && store.setApiKey("anthropic", "");
+      resetPanels();
+    }
+  };
+
+  const handleLoadData = () => {
+    loadPanelData();
+    console.log("📊 Panel data loaded from localStorage");
   };
 
   return (
     <Dialog.Root open={open} onOpenChange={onClose}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 bg-black/50 z-[100]" />
+        <Dialog.Overlay className={cn("fixed inset-0 bg-black/50", zIndex('MODAL_BACKDROP'))} />
         <Dialog.Content
           className={cn(
             "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2",
-            "bg-card border rounded-lg shadow-lg w-full max-w-md z-[110]"
+            "bg-card border rounded-lg shadow-lg w-full max-w-md",
+            zIndex('SETTINGS_MODAL')
           )}>
+
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
-            <Dialog.Title className="text-lg font-semibold text-foreground">
+          <div className="flex items-center justify-between p-6 border-b">
+            <Dialog.Title className="text-lg font-semibold flex items-center gap-2">
+              <div className="w-8 h-8 gradient-primary rounded-lg flex items-center justify-center">
+                <Sparkles className="w-4 h-4 text-white" />
+              </div>
               設定
             </Dialog.Title>
             <Dialog.Close asChild>
-              <Button variant="ghost" size="icon">
-                <X className="w-4 h-4" />
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                <X className="h-4 w-4" />
               </Button>
             </Dialog.Close>
           </div>
 
           {/* Content */}
-          <div className="p-4 space-y-6">
-            {/* API Key */}
-            <div>
-              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <Key className="w-4 h-4" />
-                OpenRouter APIキー
-              </h3>
-              <div className="space-y-2">
-                <input
-                  type="password"
-                  value={inputKey}
-                  onChange={(e) => setInputKey(e.target.value)}
-                  placeholder="sk-or-..."
-                  className={cn(
-                    "w-full p-2 text-sm bg-background border border-input rounded-md",
-                    "focus:outline-none focus:ring-2 focus:ring-ring"
-                  )}
-                />
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleTestApiKey}
-                    disabled={!inputKey.trim() || isValidating}
-                    className="flex-1">
-                    {isValidating ? "検証中..." : "テスト"}
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleSaveApiKey}
-                    disabled={!inputKey.trim()}
-                    className="flex-1">
-                    設定
-                  </Button>
+          <div className="p-6 space-y-6">
+            {/* API Keys Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Key className="w-4 h-4 text-purple-400" />
+                <h3 className="text-sm font-medium">APIキー設定</h3>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <Label htmlFor="openrouter-key" className="text-xs text-muted-foreground">
+                    OpenRouter API キー
+                  </Label>
+                  <Input
+                    id="openrouter-key"
+                    type="password"
+                    placeholder="sk-or-..."
+                    value={tempOpenRouterKey}
+                    onChange={(e) => setTempOpenRouterKey(e.target.value)}
+                    className="mt-1"
+                  />
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  現在の状態:
-                  <span
-                    className={
-                      validateUtilsApiKey(openRouterApiKey)
-                        ? "text-green-500"
-                        : "text-destructive"
-                    }>
-                    {validateUtilsApiKey(openRouterApiKey)
-                      ? "設定済み"
-                      : "未設定"}
-                  </span>
+
+                <div>
+                  <Label htmlFor="gemini-key" className="text-xs text-muted-foreground">
+                    Google Gemini API キー
+                  </Label>
+                  <Input
+                    id="gemini-key"
+                    type="password"
+                    placeholder="AIza..."
+                    value={tempGeminiKey}
+                    onChange={(e) => setTempGeminiKey(e.target.value)}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="anthropic-key" className="text-xs text-muted-foreground">
+                    Anthropic API キー
+                  </Label>
+                  <Input
+                    id="anthropic-key"
+                    type="password"
+                    placeholder="sk-ant-..."
+                    value={tempAnthropicKey}
+                    onChange={(e) => setTempAnthropicKey(e.target.value)}
+                    className="mt-1"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Data Management */}
-            <div>
-              <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" />
-                データ管理
-              </h3>
-              <div className="space-y-2">
-                <div className="bg-muted/30 p-3 rounded-md">
-                  <div className="text-xs text-muted-foreground mb-2">
-                    すべてのチャットメッセージ、カスタムプロンプト、設定をリセットします。
-                    この操作は元に戻せません。
-                  </div>
-                  {!showConfirmReset ? (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => setShowConfirmReset(true)}
-                      className="w-full">
-                      アプリデータをリセット
-                    </Button>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="text-xs text-destructive font-medium">
-                        本当にリセットしますか？
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowConfirmReset(false)}
-                          className="flex-1">
-                          キャンセル
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={handleReset}
-                          className="flex-1">
-                          リセット
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
+            {/* Data Management Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-medium">データ管理</h3>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLoadData}
+                  className="text-xs"
+                >
+                  <RefreshCw className="w-3 h-3 mr-1" />
+                  データ復元
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReset}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  リセット
+                </Button>
               </div>
+              <p className="text-xs text-muted-foreground">
+                現在のパネル数: {panels?.length || 0}
+              </p>
             </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-end gap-2 p-6 border-t">
+            <Dialog.Close asChild>
+              <Button variant="outline" size="sm">
+                キャンセル
+              </Button>
+            </Dialog.Close>
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              size="sm"
+              className="min-w-[80px]"
+            >
+              {isSaving ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                <>
+                  <Save className="w-3 h-3 mr-1" />
+                  保存
+                </>
+              )}
+            </Button>
           </div>
         </Dialog.Content>
       </Dialog.Portal>

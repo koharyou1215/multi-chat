@@ -21,6 +21,7 @@ interface ChatHistory {
   modelIds: Record<string, string>;
 }
 import { generateId } from "@/lib/utils";
+import { DEFAULT_PROMPTS } from "@/lib/default-prompts";
 import { validateModelId, validateModelConfig } from "@/lib/model-validator";
 
 interface ChatActions {
@@ -36,6 +37,7 @@ interface ChatActions {
   addMessage: (panelId: string, message: ChatMessage) => void;
   updateStreamingMessage: (panelId: string, chunk: string) => void;
   finalizeStreamingMessage: (panelId: string) => void;
+  regenerateLastMessage: (panelId: string) => void;
   clearPanelMessages: (panelId: string) => void;
   clearAllMessages: () => void;
 
@@ -73,6 +75,12 @@ interface ChatActions {
   updateCustomPrompt: (id: string, updates: Partial<CustomPrompt>) => void;
   deleteCustomPrompt: (id: string) => void;
   applyPromptToPanel: (panelId: string, promptId: string) => void;
+  // Reset custom prompts to defaults
+  resetPrompts: () => void;
+
+  // Favorites (user-saved messages)
+  addFavorite: (message: ChatMessage) => void;
+  removeFavorite: (messageId: string) => void;
 
   // Prompt History (from use-app-store)
   addPromptHistory: (item: PromptUsageHistoryItem) => void;
@@ -298,6 +306,27 @@ export const useChatStore = create<ChatStore>()(
             }
           }),
 
+        regenerateLastMessage: (panelId) =>
+          set((state) => {
+            const panel = state.panels.find((p: ChatPanel) => p.id === panelId);
+            if (panel && panel.messages.length > 0) {
+              // Find last assistant message index
+              let lastAssistantIndex = -1;
+              for (let i = panel.messages.length - 1; i >= 0; i--) {
+                if (panel.messages[i].role === "assistant") {
+                  lastAssistantIndex = i;
+                  break;
+                }
+              }
+
+              if (lastAssistantIndex !== -1) {
+                // Keep messages up to (but not including) the last assistant message
+                panel.messages = panel.messages.slice(0, lastAssistantIndex);
+                panel.streamingMessage = undefined;
+              }
+            }
+          }),
+
         clearPanelMessages: (panelId) =>
           set((state) => {
             const panel = state.panels.find((p: ChatPanel) => p.id === panelId);
@@ -481,8 +510,14 @@ export const useChatStore = create<ChatStore>()(
             state.customPrompts.push(prompt);
           }),
 
+        resetPrompts: () =>
+          set((state) => {
+            state.customPrompts = JSON.parse(JSON.stringify(DEFAULT_PROMPTS));
+            console.log("🔁 Prompts reset to defaults (count:", state.customPrompts.length, ")");
+          }),
+
         // Favorites management
-        addFavorite: (message) =>
+        addFavorite: (message: ChatMessage) =>
           set((state) => {
             // Prevent duplicates
             if (!state.favorites.find((f) => f.id === message.id)) {
@@ -493,7 +528,7 @@ export const useChatStore = create<ChatStore>()(
             }
           }),
 
-        removeFavorite: (messageId) =>
+        removeFavorite: (messageId: string) =>
           set((state) => {
             state.favorites = state.favorites.filter((m) => m.id !== messageId);
             console.log("🗑️ Removed favorite:", messageId);
