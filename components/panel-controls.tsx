@@ -99,8 +99,8 @@ export function PanelControls({
                     key={m.id}
                     className={cn(
                       "w-full text-left px-2 py-1 rounded border hover:bg-muted/50 text-sm",
-                      panels.find((p) => p.id === selectedPanelId)?.modelId ===
-                        m.id && "border-primary"
+                      panels.find((p: any) => p.id === selectedPanelId)
+                        ?.modelId === m.id && "border-primary"
                     )}
                     onClick={() =>
                       selectedPanelId && setModelForPanel(selectedPanelId, m.id)
