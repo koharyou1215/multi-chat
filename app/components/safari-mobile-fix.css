@@ -236,6 +236,17 @@
   }
 }
 
+/* Chat panel message list scrolling for Safari */
+@supports (-webkit-touch-callout: none) {
+  .chat-panel .message-list,
+  [data-testid="chat-panel"] > div {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain !important;
+  }
+}
+
 /* Content overflow prevention */
 .grid > * {
   max-width: 100%;

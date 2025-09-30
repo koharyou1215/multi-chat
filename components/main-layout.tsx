@@ -365,18 +365,22 @@ export const MainLayout = memo(function MainLayout() {
         {/* Main Content Area - Messages Container with Fixed Positioning */}
         <main
           className={cn(
-            "flex-1 overflow-y-auto overflow-x-visible px-3 md:px-4 py-4",
+            "overflow-y-auto overflow-x-hidden px-3 md:px-4 py-4",
             "scrollbar-thin scrollbar-thumb-purple-400/20 scrollbar-track-transparent",
+            isMobile ? "mobile-main" : "flex-1",
             zIndex('MAIN_CONTENT')
           )}
-          style={{
+          style={isMobile ? {
+            paddingTop: "100px",
+            paddingBottom: "120px",
+          } : {
             position: "fixed",
-            top: 0,
-            left: windowWidth >= 768 && sidebarOpen ? "256px" : "0",
-            right: windowWidth >= 768 && showRightPanel ? "400px" : "0",
-            bottom: 0,
-            paddingTop: windowWidth <= 768 ? "100px" : "90px",
-            paddingBottom: windowWidth <= 768 ? "120px" : "100px",
+            top: "56px",
+            left: sidebarOpen ? "256px" : "0",
+            right: showRightPanel ? "400px" : "0",
+            bottom: "0",
+            paddingTop: "34px",
+            paddingBottom: "100px",
             backgroundColor: "transparent",
           }}>
           {/* Chat Panels Grid */}
