@@ -8,7 +8,13 @@ import type {
   ChatMessage,
   PromptUsageHistoryItem,
   SendMode,
+  ChatHistory,
 } from "@/types";
+
+// Extend Window interface for prompt editing state
+interface WindowWithPromptId extends Window {
+  __editingPromptId?: string | null;
+}
 
 export interface AppStore {
   panels: ChatPanel[];
@@ -72,7 +78,7 @@ export interface AppStore {
   saveCurrentChat: (title?: string) => void;
   loadChatHistory: (historyId: string) => void;
   deleteChatHistory: (historyId: string) => void;
-  getChatHistories: () => any[];
+  getChatHistories: () => ChatHistory[];
 
   // Settings
   setApiKey: (provider: string, key: string) => void;
@@ -171,7 +177,7 @@ export const useAppStore = () => {
     // Expose a boolean to indicate whether prompt library should be open (mapped to sidebar state)
     promptLibraryOpen: chatStore.sidebarOpen,
     // editingPromptId isn't tracked in chatStore; support via custom event or undefined
-    editingPromptId: typeof window !== 'undefined' && (window as any).__editingPromptId ? (window as any).__editingPromptId : null,
+    editingPromptId: typeof window !== 'undefined' && (window as WindowWithPromptId).__editingPromptId ? (window as WindowWithPromptId).__editingPromptId : null,
 
     // Command palette
     setCommandPaletteOpen: chatStore.setCommandPaletteOpen,
@@ -188,8 +194,8 @@ export const useAppStore = () => {
     getChatHistories: chatStore.getChatHistories,
     // Favorites
     favorites: chatStore.favorites,
-    addFavorite: (chatStore as any).addFavorite || ((message: ChatMessage) => {}),
-    removeFavorite: (chatStore as any).removeFavorite || ((messageId: string) => {}),
+    addFavorite: chatStore.addFavorite,
+    removeFavorite: chatStore.removeFavorite,
 
     // Settings
     setApiKey: chatStore.setApiKey,

@@ -36,6 +36,22 @@ export interface OpenRouterResponse {
   };
 }
 
+export interface OpenRouterModel {
+  id: string;
+  name: string;
+  description?: string;
+  context_length?: number;
+  pricing?: {
+    prompt: string;
+    completion: string;
+  };
+  architecture?: {
+    modality?: string;
+    tokenizer?: string;
+    instruct_type?: string;
+  };
+}
+
 export class OpenRouterClient {
   private apiKey: string;
   private baseUrl = "https://openrouter.ai/api/v1";
@@ -186,7 +202,7 @@ export class OpenRouterClient {
     }
   }
 
-  async getAvailableModels(): Promise<any[]> {
+  async getAvailableModels(): Promise<OpenRouterModel[]> {
     const response = await fetch(`${this.baseUrl}/models`, {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
@@ -199,6 +215,6 @@ export class OpenRouterClient {
     }
 
     const data = await response.json();
-    return data.data || [];
+    return (data.data || []) as OpenRouterModel[];
   }
 }

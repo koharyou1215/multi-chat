@@ -28,7 +28,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [showPromptMenu, setShowPromptMenu] = useState(false);
-  const [activePrompt, setActivePrompt] = useState<any>(null);
+  const [activePrompt, setActivePrompt] = useState<CustomPrompt | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const promptMenuRef = useRef<HTMLDivElement>(null);
 
@@ -171,7 +171,7 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
   }, [visiblePanels, applyPromptToPanel]);
 
   // Handle prompt selection from library
-  const handleSelectPrompt = useCallback((prompt: any) => {
+  const handleSelectPrompt = useCallback((prompt: CustomPrompt) => {
     // If same prompt is selected, deselect it
     if (activePrompt?.id === prompt.id) {
       handleClearPrompt();
@@ -247,11 +247,10 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
     }
   };
 
-  // Style configurations based on variant
-  const containerClass =
-    variant === "glass"
-      ? "p-4 md:p-6 bg-gradient-to-t from-purple-900/60 via-purple-800/40 to-transparent backdrop-blur-3xl border-t border-white/30 shadow-2xl layout-footer broadcast-input-container overflow-visible"
-      : "p-3 border-t bg-background";
+  // Simplified container styles - parent handles positioning
+  const containerClass = variant === "glass"
+    ? "w-full max-w-5xl mx-auto"
+    : "w-full";
 
   const inputWrapperClass =
     variant === "glass"
@@ -259,8 +258,8 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
       : "rounded-lg border p-2 flex items-end space-x-2";
 
   return (
-    <div className={containerClass} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-    <div className="max-w-5xl mx-auto px-2 md:px-6" style={{ width: '100%', boxSizing: 'border-box' }}>
+    <div className={containerClass}>
+    <div className="w-full">
         <div className={inputWrapperClass} style={{ width: '100%', boxSizing: 'border-box' }}>
           {/* Attachments Preview */}
           {attachments.length > 0 && (
@@ -279,20 +278,20 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
           )}
 
           {/* Main Input Bar */}
-          <div className="flex items-start gap-2 w-full px-2">
-            {/* Button Group - Vertical (元に戻す) */}
-            <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2 w-full px-2">
+            {/* Button Group - Horizontal (参照元と同じ) */}
+            <div className="flex flex-row gap-2 items-center">
               {/* Prompt Library Button */}
               <div className="relative" ref={promptMenuRef}>
                 <button
-                  className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
+                  className="min-h-[44px] min-w-[44px] px-2 py-2 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
                   style={{
                     background: "transparent",
                     color: "white",
                   }}
                   onClick={() => setShowPromptMenu(!showPromptMenu)}
                   title="プロンプトライブラリ">
-                  <BookOpen className="w-3.5 h-3.5" style={{ color: "white" }} />
+                  <BookOpen className="w-4 h-4" style={{ color: "white" }} />
                 </button>
 
                 {/* Prompt Menu Dropdown */}
@@ -402,14 +401,14 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
 
               {/* File Attachment Button */}
               <button
-                className="px-2 py-1.5 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
+                className="min-h-[44px] min-w-[44px] px-2 py-2 rounded-xl hover:opacity-90 transition-opacity flex-shrink-0 flex items-center justify-center border border-white/50"
                 style={{
                   background: "transparent",
                   color: "white",
                 }}
                 onClick={() => fileInputRef.current?.click()}
                 title="ファイルを添付">
-                <Paperclip className="w-3.5 h-3.5" style={{ color: "white" }} />
+                <Paperclip className="w-4 h-4" style={{ color: "white" }} />
               </button>
             </div>
 
@@ -455,8 +454,8 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
               />
             </div>
 
-            {/* Button Group - Send and Optimize */}
-            <div className="flex flex-col gap-2 items-center flex-shrink-0">
+            {/* Button Group - Send and Optimize (横並び) */}
+            <div className="flex flex-row gap-2 items-center flex-shrink-0">
               {/* Send Button - Touch optimized */}
               <button
                 className="min-h-[44px] min-w-[44px] px-3 py-2 rounded-xl font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5 group flex-shrink-0 border border-white/50 whitespace-nowrap"
@@ -467,7 +466,6 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
                 onClick={handleSend}
                 disabled={!value.trim()}
                 title="メッセージを送信">
-                <span style={{ color: "white" }}>送信</span>
                 <Send
                   className="w-4 h-4 group-hover:translate-x-1 transition-transform"
                   style={{ color: "white" }}
@@ -485,17 +483,11 @@ export function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
                 disabled={!value.trim() || isOptimizing || !openRouterApiKey}
                 title={openRouterApiKey ? "プロンプトを最適化" : "APIキーが設定されていません"}
               >
-                <span style={{ color: "white" }}>{isOptimizing ? "最適化中..." : "最適化"}</span>
                 <Sparkles
                   className={`w-4 h-4 ${isOptimizing ? "animate-pulse" : ""}`}
                   style={{ color: "white" }}
                 />
               </button>
-
-              {/* 小さなヒント: APIキー未設定時 */}
-              {!openRouterApiKey && (
-                <div className="text-[11px] text-gray-400 mt-1 text-center">APIキーが設定されていません。設定で入力してください。</div>
-              )}
             </div>
           </div>
 

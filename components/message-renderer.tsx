@@ -17,7 +17,7 @@ export function MessageRenderer({ content, className, isUser = false }: MessageR
   // カスタムコンポーネント定義
   const components: Components = {
     // コードブロック
-    code({ className: codeClassName, children, ...props }: any) {
+    code({ className: codeClassName, children, ...props }: { className?: string; children?: React.ReactNode } & React.HTMLAttributes<HTMLElement>) {
       const match = /language-(\w+)/.exec(codeClassName || '');
       const language = match ? match[1] : '';
       const inline = !codeClassName || !codeClassName.startsWith('language-');

@@ -60,44 +60,16 @@ export const MainLayout = memo(function MainLayout() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Adjust main/footer positioning on mobile when soft keyboard is shown using visualViewport
+  // Window size state for responsive calculations
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
   useEffect(() => {
-    if (!isMobile || typeof window === 'undefined') return;
-
-    const onViewportChange = () => {
-      const vv = (window as any).visualViewport;
-      const footer = document.querySelector('[data-app-footer]') as HTMLElement | null;
-      const mainEl = document.querySelector('main') as HTMLElement | null;
-      if (!vv || !footer || !mainEl) return;
-
-      // When keyboard opens, visualViewport.height shrinks; compute bottom inset
-      const viewportHeight = vv.height;
-      const layoutHeight = window.innerHeight;
-      const bottomInset = Math.max(0, layoutHeight - viewportHeight);
-
-      footer.style.transform = `translateY(-${bottomInset}px)`;
-      mainEl.style.paddingBottom = `${(footer.offsetHeight || 80) + bottomInset}px`;
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
     };
-
-    window.addEventListener('resize', onViewportChange);
-    if ((window as any).visualViewport) {
-      (window as any).visualViewport.addEventListener('resize', onViewportChange);
-    }
-    // initial call
-    setTimeout(onViewportChange, 100);
-
-    return () => {
-      window.removeEventListener('resize', onViewportChange);
-      if ((window as any).visualViewport) {
-        (window as any).visualViewport.removeEventListener('resize', onViewportChange);
-      }
-      // reset styles
-      const footer = document.querySelector('[data-app-footer]') as HTMLElement | null;
-      const mainEl = document.querySelector('main') as HTMLElement | null;
-      if (footer) footer.style.transform = '';
-      if (mainEl) mainEl.style.paddingBottom = '';
-    };
-  }, [isMobile]);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // パネル初期化とデバッグログ
   useEffect(() => {
@@ -390,26 +362,25 @@ export const MainLayout = memo(function MainLayout() {
           </aside>
         )}
 
-        {/* Main Content Area */}
+        {/* Main Content Area - Messages Container with Fixed Positioning */}
         <main
           className={cn(
-            isMobile
-              ? "mobile-main"
-              : "flex-1 overflow-y-auto overflow-x-hidden px-4 md:px-6"
+            "flex-1 overflow-y-auto overflow-x-visible px-3 md:px-4 py-4",
+            "scrollbar-thin scrollbar-thumb-purple-400/20 scrollbar-track-transparent",
+            zIndex('MAIN_CONTENT')
           )}
-          style={isMobile ? {
-            position: 'fixed',
-            top: '56px',
-            bottom: '80px',
-            left: 0,
-            right: 0,
-            overflowY: 'auto',
-            overflowX: 'hidden',
-            WebkitOverflowScrolling: 'touch',
-            width: '100%'
-          } : {}}>
+          style={{
+            position: "fixed",
+            top: 0,
+            left: windowWidth >= 768 && sidebarOpen ? "256px" : "0",
+            right: windowWidth >= 768 && showRightPanel ? "400px" : "0",
+            bottom: 0,
+            paddingTop: windowWidth <= 768 ? "100px" : "90px",
+            paddingBottom: windowWidth <= 768 ? "120px" : "100px",
+            backgroundColor: "transparent",
+          }}>
           {/* Chat Panels Grid */}
-          <div className={isMobile ? "p-2" : "p-4"} style={{ width: '100%' }}>
+          <div className="w-full">
             <div
               className={cn(
                 "grid gap-4",
@@ -418,8 +389,8 @@ export const MainLayout = memo(function MainLayout() {
                   : activePanels === 2
                   ? "grid-cols-1 md:grid-cols-2"
                   : activePanels === 3
-                  ? "grid-cols-1 lg:grid-cols-3"
-                  : "grid-cols-1 md:grid-cols-2"
+                  ? "grid-cols-1 md:grid-cols-3"
+                  : "grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
               )}
               >
               {panels && panels.length > 0 ? (
@@ -471,25 +442,17 @@ export const MainLayout = memo(function MainLayout() {
         </main>
       </div>
 
-      {/* Footer */}
+      {/* Footer - Fixed at Bottom with Safe Area */}
       <div
         data-app-footer
         className={cn(
-          "glass-dark backdrop-blur-xl border-t border-white/10 px-3 md:px-4 py-3",
-          isMobile ? "mobile-footer" : "flex-shrink-0",
+          "fixed bottom-0 left-0 right-0 p-3 md:p-4",
+          "border-t border-purple-400/20 bg-slate-900/95 backdrop-blur-lg",
           zIndex('FOOTER')
         )}
-        style={isMobile ? {
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          width: '100%',
-          height: '80px',
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
-          background: 'rgba(31, 41, 55, 0.98)',
-          boxSizing: 'border-box'
-        } : {}}>
+        style={{
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)"
+        }}>
         <BroadcastInput />
       </div>
 

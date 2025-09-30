@@ -1,5 +1,16 @@
 // Performance monitoring utilities for ChatPanel optimization
 
+// Type definitions for Chrome's performance.memory API
+interface PerformanceMemory {
+  usedJSHeapSize: number;
+  totalJSHeapSize: number;
+  jsHeapSizeLimit: number;
+}
+
+interface ExtendedPerformance extends Performance {
+  memory?: PerformanceMemory;
+}
+
 export interface PerformanceMetrics {
   renderTime: number;
   memoryUsage: number;
@@ -85,7 +96,8 @@ class ChatPanelPerformanceMonitor {
   // Get memory usage (if available)
   getMemoryUsage(): number {
     if (this.hasMemoryInfo()) {
-      const memory = (performance as any).memory;
+      const perf = performance as ExtendedPerformance;
+      const memory = perf.memory!;
       return memory.usedJSHeapSize / 1024 / 1024; // Convert to MB
     }
     return 0;
@@ -93,11 +105,13 @@ class ChatPanelPerformanceMonitor {
 
   // Type guard for memory info availability
   private hasMemoryInfo(): boolean {
+    const perf = performance as ExtendedPerformance;
     return typeof window !== 'undefined' &&
            'performance' in window &&
            'memory' in performance &&
-           typeof (performance as any).memory === 'object' &&
-           'usedJSHeapSize' in (performance as any).memory;
+           typeof perf.memory === 'object' &&
+           perf.memory !== null &&
+           'usedJSHeapSize' in perf.memory;
   }
 
   // Update metrics for a component
@@ -261,17 +275,20 @@ export const runPerformanceTest = async (
 
 // Type guard for memory info availability
 const hasMemoryInfo = (): boolean => {
+  const perf = performance as ExtendedPerformance;
   return typeof window !== 'undefined' &&
          'performance' in window &&
          'memory' in performance &&
-         typeof (performance as any).memory === 'object' &&
-         'usedJSHeapSize' in (performance as any).memory;
+         typeof perf.memory === 'object' &&
+         perf.memory !== null &&
+         'usedJSHeapSize' in perf.memory;
 };
 
 // Memory leak detection
 export const detectMemoryLeaks = (): void => {
   if (hasMemoryInfo()) {
-    const memory = (performance as any).memory;
+    const perf = performance as ExtendedPerformance;
+    const memory = perf.memory!;
     const initialMemory = memory.usedJSHeapSize;
 
     setTimeout(() => {

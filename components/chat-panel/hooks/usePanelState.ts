@@ -26,7 +26,7 @@ export function usePanelState(panelId: string) {
       // Return a default panel structure to prevent crash
       return {
         id: panelId,
-        modelId: 'google/gemini-2.5-flash',
+        modelId: 'google/gemini-2.5-flash-preview-09-2025',
         messages: [],
         isLoading: false,
         error: `Panel ${panelId} initialization error`

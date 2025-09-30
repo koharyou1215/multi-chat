@@ -4,6 +4,7 @@ import "./globals.css";
 import "./components/safari-mobile-fix.css";
 import ViewportStabilizer from "./components/ViewportStabilizer";
 import MobileLayoutFix from "./components/MobileLayoutFix";
+import ClientVH from "./components/ClientVH";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,31 +40,9 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="format-detection" content="telephone=no" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <style
-          dangerouslySetInnerHTML={{
-            __html: `
-              /* Critical Safari fixes loaded immediately */
-              @supports (-webkit-touch-callout: none) {
-                html, body {
-                  position: fixed;
-                  width: 100%;
-                  height: 100%;
-                  overflow: hidden;
-                  -webkit-overflow-scrolling: touch;
-                  -webkit-text-size-adjust: 100%;
-                  -webkit-tap-highlight-color: transparent;
-                }
-
-                input, textarea, [contenteditable] {
-                  font-size: 16px !important;
-                  -webkit-appearance: none;
-                }
-              }
-            `,
-          }}
-        />
       </head>
       <body className={inter.className} suppressHydrationWarning>
+        <ClientVH />
         <ViewportStabilizer />
         <MobileLayoutFix />
         {children}

@@ -137,3 +137,14 @@ export const getModelName = (id: string): string => {
   const model = getModelById(id);
   return model?.name || id;
 };
+
+// Type-safe model ID extraction
+export const ALLOWED_MODEL_IDS = availableModels.map(m => m.id);
+export type AllowedModelId = typeof availableModels[number]['id'];
+
+/**
+ * Checks if a model ID is valid (exists in availableModels)
+ */
+export const isValidModelId = (modelId: string): modelId is AllowedModelId => {
+  return availableModels.some(model => model.id === modelId);
+};

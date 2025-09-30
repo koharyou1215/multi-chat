@@ -108,7 +108,7 @@ const createInitialPanels = (count: number): ChatPanel[] => {
   return Array.from({ length: count }, (_, i) => ({
     id: `panel-${i + 1}`,
     modelId: validateModelId(
-      i === 0 ? "google/gemini-2.5-flash" : "anthropic/claude-sonnet-4"
+      i === 0 ? "google/gemini-2.5-flash-preview-09-2025" : "anthropic/claude-sonnet-4.5"
     ),
     messages: [],
     isLoading: false,
@@ -124,8 +124,8 @@ const initialState: ChatState = {
     theme: "system",
     panelCount: 2,
     defaultModels: validateModelConfig({
-      "panel-1": "google/gemini-2.5-flash",
-      "panel-2": "anthropic/claude-sonnet-4",
+      "panel-1": "google/gemini-2.5-flash-preview-09-2025",
+      "panel-2": "anthropic/claude-sonnet-4.5",
     }),
     apiKeys: {},
     commandHistory: [],

@@ -70,8 +70,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   }: {
                     className?: string;
                     children?: React.ReactNode;
-                    [key: string]: any;
-                  }) => {
+                  } & React.HTMLAttributes<HTMLElement>) => {
                     const match = /language-(\w+)/.exec(className || "");
                     return match ? (
                       <pre className="bg-black/10 dark:bg-white/10 rounded p-2 overflow-x-auto">

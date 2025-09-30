@@ -8,13 +8,12 @@ export const Z_INDEX = {
   BACKGROUND: 0,
   CONTENT: 1,
 
-  // Navigation layers
-  SIDEBAR: 40,
+  // Layout layers - properly stacked
+  MAIN_CONTENT: 10,
   SIDEBAR_OVERLAY: 35,
-
-  // UI layers
+  SIDEBAR: 45,
   HEADER: 50,
-  FOOTER: 50,
+  FOOTER: 55,
 
   // Interactive layers
   DROPDOWN: 100,

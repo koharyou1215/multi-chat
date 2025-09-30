@@ -66,29 +66,17 @@ export function migrateStorageData() {
 }
 
 /**
- * Validates and potentially corrects a model ID
- * This is a simplified version to avoid circular imports
+ * Validates a model ID without any mappings or fallbacks.
+ * This is a simplified version to avoid circular imports.
+ * Returns the modelId as-is if valid, otherwise returns null to indicate removal.
  */
-function validateModelId(modelId: string): string {
+function validateModelId(modelId: string): string | null {
   if (!modelId || modelId.trim() === '') {
-    return 'google/gemini-2.5-flash';
+    return null; // Invalid, should be removed from storage
   }
 
-  // Handle common invalid model IDs
-  const modelMappings: Record<string, string> = {
-    'google/gemini-1.5-flash-8b': 'google/gemini-2.5-flash',
-    'google/gemini-1.5-flash': 'google/gemini-2.5-flash',
-    'google/gemini-1.5-pro': 'google/gemini-2.5-pro',
-  };
-
-  if (modelMappings[modelId]) {
-    return modelMappings[modelId];
-  }
-
-  // If it contains gemini-1.5, upgrade to 2.5
-  if (modelId.includes('gemini-1.5')) {
-    return modelId.includes('pro') ? 'google/gemini-2.5-pro' : 'google/gemini-2.5-flash';
-  }
-
+  // Only return the modelId if it's in the valid list
+  // For now, we just return it as-is and let the main validator handle it
+  // If it's invalid, the app will show an error and user must select a valid model
   return modelId;
 }
