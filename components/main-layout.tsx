@@ -119,14 +119,15 @@ export const MainLayout = memo(function MainLayout() {
           isMobile ? "mobile-header" : "flex-shrink-0 h-14",
           zIndex('HEADER')
         )}
-        style={isMobile ? {
+        style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
-          height: '56px',
-          background: 'rgba(31, 41, 55, 0.98)'
-        } : {}}>
+          height: isMobile ? '56px' : '56px',
+          background: 'rgba(31, 41, 55, 0.98)',
+          zIndex: 100
+        }}>
         <div className="flex items-center justify-between h-full">
           <div className="flex items-center gap-4">
             {/* Menu Button - Touch optimized */}
@@ -370,17 +371,14 @@ export const MainLayout = memo(function MainLayout() {
             isMobile ? "mobile-main" : "flex-1",
             zIndex('MAIN_CONTENT')
           )}
-          style={isMobile ? {
-            paddingTop: "100px",
-            paddingBottom: "120px",
-          } : {
+          style={{
             position: "fixed",
             top: "56px",
-            left: sidebarOpen ? "256px" : "0",
-            right: showRightPanel ? "400px" : "0",
+            left: isMobile ? "0" : (sidebarOpen ? "256px" : "0"),
+            right: isMobile ? "0" : (showRightPanel ? "400px" : "0"),
             bottom: "0",
-            paddingTop: "34px",
-            paddingBottom: "100px",
+            paddingTop: isMobile ? "calc(env(safe-area-inset-top, 0px) + 16px)" : "16px",
+            paddingBottom: "calc(100px + env(safe-area-inset-bottom, 0px) + 16px)",
             backgroundColor: "transparent",
           }}>
           {/* Chat Panels Grid */}
@@ -447,18 +445,24 @@ export const MainLayout = memo(function MainLayout() {
       </div>
 
       {/* Footer - Fixed at Bottom with Safe Area */}
-      <div
+      <footer
         data-app-footer
         className={cn(
-          "fixed bottom-0 left-0 right-0 p-3 md:p-4",
+          "layout-footer p-3 md:p-4",
           "border-t border-purple-400/20 bg-slate-900/95 backdrop-blur-lg",
+          isMobile && "mobile-footer",
           zIndex('FOOTER')
         )}
         style={{
-          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)"
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 8px)",
+          zIndex: 100
         }}>
         <BroadcastInput />
-      </div>
+      </footer>
 
       {/* Modals */}
       <PromptLibrary
