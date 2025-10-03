@@ -1,11 +1,12 @@
 "use client";
 
-import { useAppStore } from "@/store/use-app-store";
-import { useState, useRef, useEffect } from "react";
+import { useAppStore } from "@/store/chat-store";
+import { useState, useRef, useEffect, memo, useMemo, useCallback } from "react";
 import { availableModels, getModelsByGroup, getModelById } from "@/lib/models";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { zIndex } from "@/lib/config";
 import { ModelPill } from "./ui/model-pill";
 
 interface ModelSelectorProps {
@@ -18,7 +19,7 @@ interface ModelSelectorProps {
   variant?: "radix" | "custom" | "simple" | "glass"; // Choose implementation style
 }
 
-export function ModelSelector({
+export const ModelSelector = memo(function ModelSelector({
   panelId,
   currentModelId,
   value,
@@ -31,18 +32,24 @@ export function ModelSelector({
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Determine which model ID and change handler to use
+  // Determine which model ID to use
   const modelId = currentModelId || value || "";
-  const handleChange = (newModelId: string) => {
+
+  // Memoize current model lookup
+  const currentModel = useMemo(
+    () => getModelById(modelId),
+    [modelId]
+  );
+
+  // Memoize handleChange to prevent child re-renders
+  const handleChange = useCallback((newModelId: string) => {
     if (panelId && setModelForPanel) {
       setModelForPanel(panelId, newModelId);
     }
     if (onChange) {
       onChange(newModelId);
     }
-  };
-
-  const currentModel = getModelById(modelId);
+  }, [panelId, setModelForPanel, onChange]);
 
   // Close dropdown on outside click (for custom variant)
   useEffect(() => {
@@ -101,12 +108,12 @@ export function ModelSelector({
             position="popper"
             sideOffset={8}
             align="start"
-            style={{ zIndex: 10000 }}
             className={cn(
               "min-w-[200px] max-h-[400px] overflow-auto",
               "rounded-xl bg-gray-900/95",
               "backdrop-blur-xl border border-white/20 shadow-2xl",
-              "animate-in fade-in-0 zoom-in-95"
+              "animate-in fade-in-0 zoom-in-95",
+              zIndex('MODEL_SELECTOR')
             )}>
             <Select.Viewport className="p-2">
               {Object.entries(modelGroups).map(([group, models]) => (
@@ -250,12 +257,12 @@ export function ModelSelector({
             position="popper"
             sideOffset={5}
             align="center"
-            style={{ zIndex: 9999 }}
             className={cn(
               "min-w-[180px] overflow-hidden",
               "rounded-xl bg-gray-900/98",
               "backdrop-blur-xl border border-white/10 shadow-2xl",
-              "animate-in fade-in-0 zoom-in-95"
+              "animate-in fade-in-0 zoom-in-95",
+              zIndex('MODEL_SELECTOR')
             )}>
             <Select.Viewport className="p-1">
               {Object.entries(modelGroups).map(([group, models]) => (
@@ -356,4 +363,6 @@ export function ModelSelector({
       )}
     </div>
   );
-}
+});
+
+ModelSelector.displayName = "ModelSelector";
