@@ -37,35 +37,47 @@ export interface PromptVariable {
   placeholder?: string;
 }
 
-export interface CustomPrompt {
+// Consolidated Prompt interface (replaces both Prompt and CustomPrompt)
+export interface Prompt {
   id: string;
   title: string;
   content: string;
   description?: string;
+  category: string;
   tags: string[];
+  variables?: PromptVariable[];
+
+  // Usage and favorites
+  isFavorite: boolean;
+  usageCount: number;
+  lastUsed?: Date;
+
+  // Timestamps
   createdAt: Date;
   updatedAt: Date;
+
+  // Optimization metadata
   isOptimized?: boolean;
   originalContent?: string;
-  variables?: PromptVariable[];
-  category?: string;
-  isFavorite?: boolean;
 }
+
+// Deprecated: Use Prompt instead
+// @deprecated Use Prompt interface
+export type CustomPrompt = Prompt;
 
 export interface ChatPanel {
   id: string;
   modelId: string;
   messages: ChatMessage[];
   isLoading: boolean;
-  customPrompt?: CustomPrompt;
+  customPrompt?: Prompt;  // Updated to use consolidated Prompt type
   error?: string;
   streamingMessage?: string;
 }
 
 export interface AppState {
   panels: ChatPanel[];
-  activePanels: number;
-  customPrompts: CustomPrompt[];
+  customPrompts: Prompt[];  // Updated to use consolidated Prompt type
   openRouterApiKey?: string;
 }
 
@@ -88,50 +100,42 @@ export interface ChatHistory {
 // Additional types for chat-store compatibility
 export type SendMode = "all" | "selected" | "group";
 
-export interface Prompt {
-  id: string;
-  title: string;
-  content: string;
-  category: string;
-  tags: string[];
-  isFavorite: boolean;
-  usageCount: number;
-  lastUsed: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface ChatState {
+  // Storage Version (for migration)
+  version?: number;
+
+  // Panel Management
   panels: ChatPanel[];
   activePanelIds: string[];
-  commandPaletteOpen: boolean;
-  multiSendMode: SendMode;
   selectedPanelId: string | null;
-  groupedPanelIds: string[];
-  prompts: Prompt[];
-  settings: AppSettings;
+  selectedPanelIds: string[]; // Multi-send target panels
+  multiSendMode: SendMode;
 
-  // Additional state from use-app-store
-  activePanels: number; // Legacy compatibility
-  customPrompts: CustomPrompt[];
-  sidebarOpen: boolean;
-  multiSendIds: string[]; // Legacy compatibility
+  // Prompts (consolidated from prompts + customPrompts)
+  customPrompts: Prompt[];  // Single source of truth for prompts
   promptHistory: PromptUsageHistoryItem[];
-  openRouterApiKey?: string; // Will be migrated to settings.apiKeys
-  // Favorites (user-saved messages)
-  favorites: ChatMessage[];
-  // Chat histories storage
-  chatHistories: ChatHistory[];
+
+  // UI State
+  commandPaletteOpen: boolean;
+  sidebarOpen: boolean;
+  promptLibraryOpen: boolean;
+  editingPromptId: string | null;
+
+  // User Data
+  favorites: ChatMessage[];  // User-saved messages
+  chatHistories: ChatHistory[];  // Chat histories storage
+
+  // Settings
+  settings: AppSettings;
 }
 
 export interface AppSettings {
   theme: "light" | "dark" | "system";
   panelCount: number;
-  defaultModels: Record<string, string>;
-  apiKeys: Record<string, string>;
+  defaultModels: Record<string, string>;  // panelId -> modelId mapping
+  apiKeys: Record<string, string>;  // service -> apiKey mapping (includes openRouterApiKey)
   commandHistory: string[];
   shortcuts: Record<string, string>;
-  openRouterApiKey?: string; // Legacy field for migration
 }
 
 export interface Command {
@@ -141,3 +145,20 @@ export interface Command {
   category: string;
   action: (args?: string[]) => Promise<void>;
 }
+
+// Type Guards
+export function isPrompt(obj: unknown): obj is Prompt {
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    'id' in obj &&
+    'title' in obj &&
+    'content' in obj &&
+    'category' in obj
+  );
+}
+
+// Utility Types
+export type PanelId = string;
+export type ModelId = string;
+export type PromptId = string;

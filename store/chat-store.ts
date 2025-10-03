@@ -23,6 +23,11 @@ interface ChatHistory {
 import { generateId } from "@/lib/utils";
 import { DEFAULT_PROMPTS } from "@/lib/default-prompts";
 import { validateModelId, validateModelConfig } from "@/lib/model-validator";
+import { logger } from "@/lib/utils/logger";
+
+// Storage Version for migration management
+// Increment this when making breaking changes to the store schema
+const STORAGE_VERSION = 2;
 
 interface ChatActions {
   // Panel Management
@@ -47,16 +52,15 @@ interface ChatActions {
 
   // Send Modes
   setSendMode: (mode: SendMode) => void;
-  setMultiSendMode: (mode: SendMode) => void; // Alias for compatibility
-  toggleGroupPanel: (panelId: string) => void;
-  toggleMultiSendPanel: (panelId: string) => void; // For multiSendIds compatibility
-  clearGroupedPanels: () => void;
-  clearMultiSend: () => void;
-  setGroupedPanelIds: (ids: string[]) => void;
+  togglePanelSelection: (panelId: string) => void;
+  clearPanelSelection: () => void;
+  setSelectedPanelIds: (ids: string[]) => void;
 
   // UI State Management (from use-app-store)
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+  setPromptLibraryOpen: (open: boolean) => void;
+  setEditingPromptId: (id: string | null) => void;
 
   // Command Palette
   toggleCommandPalette: () => void;
@@ -96,6 +100,9 @@ interface ChatActions {
   setApiKey: (provider: "gemini" | "openRouter" | string, key: string) => void;
   setDefaultModel: (panelId: string, modelId: string) => void;
   resetStore: () => void;
+  savePanelData: () => void;
+  loadPanelData: () => void;
+  resetPanels: () => void;
 
   // Utilities
   generatePanelId: () => string;
@@ -116,10 +123,10 @@ const createInitialPanels = (count: number): ChatPanel[] => {
 };
 
 const initialState: ChatState = {
+  version: STORAGE_VERSION,
   panels: createInitialPanels(2),
   activePanelIds: ["panel-1", "panel-2"],
   selectedPanelId: "panel-1",
-  prompts: [],
   settings: {
     theme: "system",
     panelCount: 2,
@@ -137,19 +144,21 @@ const initialState: ChatState = {
   },
   commandPaletteOpen: false,
   multiSendMode: "all",
-  groupedPanelIds: [],
+  selectedPanelIds: ["panel-1", "panel-2"], // デフォルトで全パネルをONに
 
   // Additional state from use-app-store
-  activePanels: 2,
   customPrompts: [],
   sidebarOpen: true,
-  multiSendIds: ["panel-1", "panel-2"], // デフォルトで全パネルをONに
   promptHistory: [],
-  openRouterApiKey: "",
   chatHistories: [] as ChatHistory[],
   favorites: [],
+
+  // UI state for prompt library
+  promptLibraryOpen: false,
+  editingPromptId: null as string | null,
 };
 
+// Export as useAppStore for backward compatibility
 export const useChatStore = create<ChatStore>()(
   persist(
     immer((set, get) => {
@@ -158,9 +167,9 @@ export const useChatStore = create<ChatStore>()(
         typeof window !== "undefined" &&
         localStorage.getItem("multi-chat-store");
       if (hasHydrated) {
-        console.log("🔄 Store hydrating from localStorage");
+        logger.store("Store hydrating from localStorage");
       } else {
-        console.log("🆕 Store initializing with default state");
+        logger.store("Store initializing with default state");
       }
 
       return {
@@ -178,7 +187,7 @@ export const useChatStore = create<ChatStore>()(
         setPanelCount: (count) =>
           set((state) => {
             const currentCount = state.panels.length;
-            console.log(`🔢 Setting panel count: ${currentCount} → ${count}`);
+            logger.store(`Setting panel count: ${currentCount} → ${count}`);
 
             if (count > currentCount) {
               // Add new panels - 既存のパネルはそのまま保持
@@ -198,38 +207,33 @@ export const useChatStore = create<ChatStore>()(
                     messages: [],
                     isLoading: false,
                   };
-                  console.log(
-                    `➕ Adding new panel: ${panelId} with model ${newPanel.modelId}`
-                  );
+                  logger.panel(panelId, "Adding new panel", { modelId: newPanel.modelId });
                   state.panels.push(newPanel);
                 } else {
-                  console.log(
-                    `🔄 Panel ${panelId} already exists, keeping current settings`
-                  );
+                  logger.panel(panelId, "Panel already exists, keeping current settings");
                 }
 
                 if (!state.activePanelIds.includes(panelId)) {
                   state.activePanelIds.push(panelId);
                 }
                 // 新しいパネルもデフォルトでONにする
-                if (!state.multiSendIds.includes(panelId)) {
-                  state.multiSendIds.push(panelId);
+                if (!state.selectedPanelIds.includes(panelId)) {
+                  state.selectedPanelIds.push(panelId);
                 }
               }
             } else if (count < currentCount) {
               // Remove excess panels
-              console.log(`➖ Removing panels: keeping first ${count}`);
+              logger.store(`Removing panels: keeping first ${count}`);
               state.panels = state.panels.slice(0, count);
               state.activePanelIds = state.activePanelIds.slice(0, count);
-              // multiSendIdsからも削除
+              // selectedPanelIdsからも削除
               const validPanelIds = state.panels.map((p) => p.id);
-              state.multiSendIds = state.multiSendIds.filter((id) =>
+              state.selectedPanelIds = state.selectedPanelIds.filter((id) =>
                 validPanelIds.includes(id)
               );
             }
 
             state.settings.panelCount = count;
-            state.activePanels = count; // Keep legacy field in sync
 
             // Ensure selected panel is still valid
             if (!state.activePanelIds.includes(state.selectedPanelId || "")) {
@@ -262,13 +266,15 @@ export const useChatStore = create<ChatStore>()(
             const panel = state.panels.find((p: ChatPanel) => p.id === panelId);
             if (panel) {
               const validatedModelId = validateModelId(modelId);
-              console.log(
-                `🔄 Setting model for ${panelId}: ${panel.modelId} → ${validatedModelId}`
+              logger.panel(
+                panelId,
+                "Setting model",
+                { from: panel.modelId, to: validatedModelId }
               );
               panel.modelId = validatedModelId;
               state.settings.defaultModels[panelId] = validatedModelId;
             } else {
-              console.log(`❌ Panel ${panelId} not found for model change`);
+              logger.error(`Panel ${panelId} not found for model change`);
             }
           }),
 
@@ -367,23 +373,34 @@ export const useChatStore = create<ChatStore>()(
           set((state) => {
             state.multiSendMode = mode;
             if (mode !== "group") {
-              state.groupedPanelIds = [];
+              state.selectedPanelIds = [];
             }
           }),
 
-        toggleGroupPanel: (panelId) =>
+        togglePanelSelection: (panelId) =>
           set((state) => {
-            const index = state.groupedPanelIds.indexOf(panelId);
+            const index = state.selectedPanelIds.indexOf(panelId);
             if (index >= 0) {
-              state.groupedPanelIds.splice(index, 1);
+              state.selectedPanelIds.splice(index, 1);
             } else {
-              state.groupedPanelIds.push(panelId);
+              state.selectedPanelIds.push(panelId);
             }
           }),
 
-        clearGroupedPanels: () =>
+        clearPanelSelection: () =>
           set((state) => {
-            state.groupedPanelIds = [];
+            state.selectedPanelIds = [];
+          }),
+
+        // UI State (Prompt Library)
+        setPromptLibraryOpen: (open) =>
+          set((state) => {
+            state.promptLibraryOpen = open;
+          }),
+
+        setEditingPromptId: (id) =>
+          set((state) => {
+            state.editingPromptId = id;
           }),
 
         // Command Palette
@@ -407,15 +424,15 @@ export const useChatStore = create<ChatStore>()(
             ].slice(0, 50); // Keep last 50 commands
           }),
 
-        // Prompt Management
+        // Prompt Management (using customPrompts)
         addPrompt: (prompt) =>
           set((state) => {
-            state.prompts.push(prompt);
+            state.customPrompts.push(prompt);
           }),
 
         updatePrompt: (promptId, updates) =>
           set((state) => {
-            const prompt = state.prompts.find((p: Prompt) => p.id === promptId);
+            const prompt = state.customPrompts.find((p: Prompt) => p.id === promptId);
             if (prompt) {
               Object.assign(prompt, updates, { updatedAt: new Date() });
             }
@@ -423,14 +440,14 @@ export const useChatStore = create<ChatStore>()(
 
         deletePrompt: (promptId) =>
           set((state) => {
-            state.prompts = state.prompts.filter(
+            state.customPrompts = state.customPrompts.filter(
               (p: Prompt) => p.id !== promptId
             );
           }),
 
         incrementPromptUsage: (promptId) =>
           set((state) => {
-            const prompt = state.prompts.find((p: Prompt) => p.id === promptId);
+            const prompt = state.customPrompts.find((p: Prompt) => p.id === promptId);
             if (prompt) {
               prompt.usageCount++;
               prompt.lastUsed = new Date();
@@ -439,7 +456,7 @@ export const useChatStore = create<ChatStore>()(
 
         togglePromptFavorite: (promptId) =>
           set((state) => {
-            const prompt = state.prompts.find((p: Prompt) => p.id === promptId);
+            const prompt = state.customPrompts.find((p: Prompt) => p.id === promptId);
             if (prompt) {
               prompt.isFavorite = !prompt.isFavorite;
             }
@@ -461,6 +478,23 @@ export const useChatStore = create<ChatStore>()(
             state.settings.defaultModels[panelId] = validateModelId(modelId);
           }),
 
+        savePanelData: () => {
+          // Data is auto-persisted by zustand persist middleware
+          logger.store("Panel data saved automatically");
+        },
+
+        loadPanelData: () => {
+          // Data is auto-loaded by zustand persist middleware
+          logger.store("Panel data loaded automatically");
+        },
+
+        resetPanels: () =>
+          set((state) => {
+            const panelCount = state.activePanelIds.length || 2;
+            state.panels = createInitialPanels(panelCount);
+            state.customPrompts = DEFAULT_PROMPTS;
+          }),
+
         // UI State Management (from use-app-store)
         toggleSidebar: () =>
           set((state) => {
@@ -472,36 +506,9 @@ export const useChatStore = create<ChatStore>()(
             state.sidebarOpen = open;
           }),
 
-        // Multi-Send compatibility
-        setMultiSendMode: (mode) =>
+        setSelectedPanelIds: (ids) =>
           set((state) => {
-            state.multiSendMode = mode;
-          }),
-
-        toggleMultiSendPanel: (panelId) =>
-          set((state) => {
-            const exists = state.multiSendIds.includes(panelId);
-            if (exists) {
-              state.multiSendIds = state.multiSendIds.filter(
-                (id: string) => id !== panelId
-              );
-            } else {
-              state.multiSendIds.push(panelId);
-            }
-            // Sync with groupedPanelIds for compatibility
-            state.groupedPanelIds = [...state.multiSendIds];
-          }),
-
-        clearMultiSend: () =>
-          set((state) => {
-            state.multiSendIds = [];
-            state.groupedPanelIds = [];
-          }),
-
-        setGroupedPanelIds: (ids) =>
-          set((state) => {
-            state.groupedPanelIds = ids;
-            state.multiSendIds = [...ids]; // Keep in sync
+            state.selectedPanelIds = ids;
           }),
 
         // Custom Prompt Management (from use-app-store)
@@ -513,7 +520,7 @@ export const useChatStore = create<ChatStore>()(
         resetPrompts: () =>
           set((state) => {
             state.customPrompts = JSON.parse(JSON.stringify(DEFAULT_PROMPTS));
-            console.log("🔁 Prompts reset to defaults (count:", state.customPrompts.length, ")");
+            logger.store("Prompts reset to defaults", { count: state.customPrompts.length });
           }),
 
         // Favorites management
@@ -522,16 +529,16 @@ export const useChatStore = create<ChatStore>()(
             // Prevent duplicates
             if (!state.favorites.find((f) => f.id === message.id)) {
               state.favorites.push(message);
-              console.log("⭐ Added favorite:", message.id);
+              logger.debug("Added favorite:", message.id);
             } else {
-              console.log("⭐ Favorite already exists:", message.id);
+              logger.debug("Favorite already exists:", message.id);
             }
           }),
 
         removeFavorite: (messageId: string) =>
           set((state) => {
             state.favorites = state.favorites.filter((m) => m.id !== messageId);
-            console.log("🗑️ Removed favorite:", messageId);
+            logger.debug("Removed favorite:", messageId);
           }),
 
         updateCustomPrompt: (id, updates) =>
@@ -637,7 +644,28 @@ export const useChatStore = create<ChatStore>()(
     }),
     {
       name: "multi-chat-store",
+      version: STORAGE_VERSION,
       storage: createJSONStorage(() => localStorage),
+
+      // Migration function - runs when version changes
+      migrate: (persistedState: any, version: number) => {
+        logger.store("Running migration", { from: version, to: STORAGE_VERSION });
+
+        // Migration from version 0/1 to version 2
+        if (version < 2) {
+          logger.store("Migrating to v2: clearing old prompts and data");
+
+          // Clear old prompts and reset to empty state
+          return {
+            ...persistedState,
+            version: STORAGE_VERSION,
+            customPrompts: [],  // Clear old default prompts
+            promptHistory: [],  // Clear prompt history
+          };
+        }
+
+        return persistedState;
+      },
 
       // すべての状態を永続化（一時的なテスト）
       partialize: (state) => {
@@ -647,6 +675,7 @@ export const useChatStore = create<ChatStore>()(
         // パネルのloading状態をリセット
         const cleanedState = {
           ...persistedState,
+          version: STORAGE_VERSION,  // Always persist current version
           panels: persistedState.panels.map((panel) => ({
             ...panel,
             isLoading: false,
@@ -654,13 +683,14 @@ export const useChatStore = create<ChatStore>()(
           })),
         };
 
-        console.log("💾 Persisting state:", {
+        logger.store("Persisting state", {
+          version: STORAGE_VERSION,
           panelCount: cleanedState.panels.length,
           panelModels: cleanedState.panels.map((p) => ({
             id: p.id,
             modelId: p.modelId,
           })),
-          multiSendIds: cleanedState.multiSendIds,
+          selectedPanelIds: cleanedState.selectedPanelIds,
         });
 
         return cleanedState;
@@ -669,22 +699,15 @@ export const useChatStore = create<ChatStore>()(
       // 復元時の処理
       onRehydrateStorage: () => (state) => {
         if (state) {
-          console.log("🔄 Store rehydrated from localStorage:", {
+          logger.store("Store rehydrated from localStorage", {
+            version: state.version,
             panelCount: state.panels.length,
             panelModels: state.panels.map((p) => ({
               id: p.id,
               modelId: p.modelId,
             })),
-            multiSendIds: state.multiSendIds,
+            selectedPanelIds: state.selectedPanelIds,
           });
-
-          // 復元後の整合性チェック
-          if (state.panels.length !== state.activePanels) {
-            console.log(
-              `🔧 Fixing activePanels: ${state.activePanels} → ${state.panels.length}`
-            );
-            state.activePanels = state.panels.length;
-          }
 
           // activePanelIdsとpanelsの整合性チェック
           const expectedIds = state.panels.map((p) => p.id);
@@ -692,11 +715,9 @@ export const useChatStore = create<ChatStore>()(
             JSON.stringify(state.activePanelIds.sort()) !==
             JSON.stringify(expectedIds.sort())
           ) {
-            console.log(
-              `🔧 Fixing activePanelIds:`,
-              state.activePanelIds,
-              "→",
-              expectedIds
+            logger.store(
+              "Fixing activePanelIds",
+              { from: state.activePanelIds, to: expectedIds }
             );
             state.activePanelIds = expectedIds;
           }
@@ -705,3 +726,6 @@ export const useChatStore = create<ChatStore>()(
     }
   )
 );
+
+// Backward compatibility export
+export const useAppStore = useChatStore;
