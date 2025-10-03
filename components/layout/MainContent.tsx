@@ -35,7 +35,7 @@ export const MainContent = memo(function MainContent({
   return (
     <main
       className={cn(
-        "overflow-y-auto overflow-x-hidden px-3 md:px-4 py-4",
+        "overflow-y-auto overflow-x-hidden py-4",
         "scrollbar-thin scrollbar-thumb-purple-400/20 scrollbar-track-transparent",
         isMobile ? "mobile-main" : "flex-1",
         zIndex("MAIN_CONTENT")
@@ -46,16 +46,18 @@ export const MainContent = memo(function MainContent({
         left: "0",
         right: isMobile ? "0" : showRightPanel ? "400px" : "0",
         bottom: "0",
+        paddingLeft: 0,
+        paddingRight: 0,
         paddingTop: isMobile
           ? "calc(env(safe-area-inset-top, 0px) + 16px)"
           : "16px",
         paddingBottom:
-          "calc(100px + env(safe-area-inset-bottom, 0px) + 16px)",
+          "calc(68px + env(safe-area-inset-bottom, 0px) + 16px)",
         backgroundColor: "transparent",
       }}
     >
       {/* Chat Panels Grid */}
-      <div className="w-full">
+      <div className="w-full px-3 md:px-4">
         <div
           className={cn(
             "grid gap-4",

@@ -17,17 +17,19 @@ interface BroadcastInputProps {
 }
 
 export const BroadcastInput = memo(function BroadcastInput({ variant = "glass" }: BroadcastInputProps) {
+  const store = useAppStore();
   const {
     panels,
     activePanelIds,
     customPrompts = [],
     applyPromptToPanel,
-    openRouterApiKey,
     resetPrompts,
     deleteCustomPrompt,
     setPromptLibraryOpen,
     setEditingPromptId,
-  } = useAppStore();
+    settings,
+  } = store;
+  const openRouterApiKey = settings?.apiKeys?.openrouter || settings?.apiKeys?.openRouter;
 
   const { send } = useMessageSender();
   const [value, setValue] = useState("");
@@ -168,7 +170,7 @@ export const BroadcastInput = memo(function BroadcastInput({ variant = "glass" }
 
   const inputWrapperClass =
     variant === "glass"
-      ? "flex flex-col gap-3 md:gap-4 px-4 md:px-6 py-4 md:py-5 glass-dark backdrop-blur-2xl rounded-2xl min-h-[80px]"
+      ? "flex flex-col gap-2 px-3 py-2 glass-dark backdrop-blur-2xl rounded-2xl min-h-[52px]"
       : "rounded-lg border p-2 flex items-end space-x-2";
 
   return (
